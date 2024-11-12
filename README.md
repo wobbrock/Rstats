@@ -1,4 +1,4 @@
-# Rstats
+# \#Rstats
 Statistical Analysis and Reporting in R
 
 R code recipes for experiment and survey analysis.
