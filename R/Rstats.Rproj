@@ -1,4 +1,5 @@
 Version: 1.0
+ProjectId: e6a037ae-d5e6-4a8c-ab68-87536aa87ba2
 
 RestoreWorkspace: Default
 SaveWorkspace: Default
@@ -12,4 +13,4 @@ Encoding: UTF-8
 RnwWeave: Sweave
 LaTeX: pdfLaTeX
 
-ProjectName: Rstats
+ProjectName: #Rstats

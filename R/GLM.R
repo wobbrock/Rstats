@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### March 12, 2019
-### Updated: 11/11/2024
+### Updated: 1/17/2025
 ###
 
 ###
@@ -119,23 +119,23 @@ emmeans(m, pairwise ~ X, adjust="holm")
 ##
 # df has one between-Ss. factor (X) w/levels (a,b,c) and dichotomous response (Y)
 set.seed(123)
-a = sample(c("no", "yes"), 20, replace=TRUE, prob=c(0.7, 0.3))
-b = sample(c("no", "yes"), 20, replace=TRUE, prob=c(0.3, 0.7))
-c = sample(c("no", "yes"), 20, replace=TRUE, prob=c(0.5, 0.5))
+a = sample(c("yes", "no"), 20, replace=TRUE, prob=c(0.7, 0.3))
+b = sample(c("yes", "no"), 20, replace=TRUE, prob=c(0.3, 0.7))
+c = sample(c("yes", "no"), 20, replace=TRUE, prob=c(0.5, 0.5))
 df = data.frame(
   PId = factor(seq(1, 60, 1)),
   X = factor(rep(c("a","b","c"), each=20)),
-  Y = factor(c(a,b,c))
+  Y = factor(c(a,b,c), levels=c("yes","no"))
 )
 contrasts(df$X) <- "contr.sum"
 View(df)
 
 ddply(df, ~ X, function(data) c(
   "Nrows"=nrow(data),
-  "no"=sum(data$Y == "no"),
-  "yes"=sum(data$Y == "yes")
+  "yes"=sum(data$Y == "yes"),
+  "no"=sum(data$Y == "no")
 ))
-mosaicplot( ~ X + Y, data=df, main="Y by X", col=c("pink","lightgreen"))
+mosaicplot( ~ X + Y, data=df, main="Y by X", col=c("lightgreen","pink"))
 
 m = glm(Y ~ X, data=df, family=binomial)
 Anova(m, type=3)
@@ -148,24 +148,24 @@ emmeans(m, pairwise ~ X, adjust="holm")
 ##
 # df has one between-Ss. factor (X) w/levels (a,b,c) and polytomous response (Y)
 set.seed(123)
-a = sample(c("maybe","no","yes"), 20, replace=TRUE, prob=c(0.5, 0.3, 0.2))
-b = sample(c("maybe","no","yes"), 20, replace=TRUE, prob=c(0.3, 0.2, 0.5))
-c = sample(c("maybe","no","yes"), 20, replace=TRUE, prob=c(0.4, 0.5, 0.1))
+a = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.5, 0.3, 0.2))
+b = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.3, 0.2, 0.5))
+c = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.4, 0.5, 0.1))
 df = data.frame(
   PId = factor(seq(1, 60, 1)),
   X = factor(rep(c("a","b","c"), each=20)),
-  Y = factor(c(a,b,c))
+  Y = factor(c(a,b,c), levels=c("yes","no","maybe"))
 )
 contrasts(df$X) <- "contr.sum"
 View(df)
 
 ddply(df, ~ X, function(data) c(
   "Nrows"=nrow(data),
-  "maybe"=sum(data$Y == "maybe"),
+  "yes"=sum(data$Y == "yes"),
   "no"=sum(data$Y == "no"),
-  "yes"=sum(data$Y == "yes")
+  "maybe"=sum(data$Y == "maybe")
 ))
-mosaicplot( ~ X + Y, data=df, main="Y by X", col=c("lightyellow","pink","lightgreen"))
+mosaicplot( ~ X + Y, data=df, main="Y by X", col=c("lightgreen","pink","lightyellow"))
 
 m0 = multinom(Y ~ X, data=df, trace=FALSE)
 Anova(m0, type=3)
@@ -629,15 +629,15 @@ emmeans(m, pairwise ~ X1*X2, adjust="holm")
 ##
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and dichotomous response (Y)
 set.seed(123)
-aa = sample(c("no", "yes"), 15, replace=TRUE, prob=c(0.7, 0.3))
-ab = sample(c("no", "yes"), 15, replace=TRUE, prob=c(0.2, 0.8))
-ba = sample(c("no", "yes"), 15, replace=TRUE, prob=c(0.7, 0.3))
-bb = sample(c("no", "yes"), 15, replace=TRUE, prob=c(0.4, 0.6))
+aa = sample(c("yes", "no"), 15, replace=TRUE, prob=c(0.7, 0.3))
+ab = sample(c("yes", "no"), 15, replace=TRUE, prob=c(0.2, 0.8))
+ba = sample(c("yes", "no"), 15, replace=TRUE, prob=c(0.7, 0.3))
+bb = sample(c("yes", "no"), 15, replace=TRUE, prob=c(0.4, 0.6))
 df = data.frame(
   PId = factor(seq(1, 60, 1)),
   X1 = factor(rep(c("a","b"), each=30)),
   X2 = factor(rep(rep(c("a","b"), each=15), times=2)),
-  Y = factor(c(aa,ab,ba,bb))
+  Y = factor(c(aa,ab,ba,bb), levels=c("yes","no"))
 )
 contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
@@ -645,10 +645,10 @@ View(df)
 
 ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
-  "no"=sum(data$Y == "no"),
-  "yes"=sum(data$Y == "yes")
+  "yes"=sum(data$Y == "yes"),
+  "no"=sum(data$Y == "no")
 ))
-mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X", col=c("pink","lightgreen"))
+mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=c("lightgreen","pink"))
 
 m = glm(Y ~ X1*X2, data=df, family=binomial)
 Anova(m, type=3)
@@ -661,15 +661,15 @@ emmeans(m, pairwise ~ X1*X2, adjust="holm")
 ##
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and polytomous response (Y)
 set.seed(123)
-aa = sample(c("maybe","no","yes"), 15, replace=TRUE, prob=c(0.5, 0.3, 0.2))
-ab = sample(c("maybe","no","yes"), 15, replace=TRUE, prob=c(0.3, 0.2, 0.5))
-ba = sample(c("maybe","no","yes"), 15, replace=TRUE, prob=c(0.2, 0.5, 0.3))
-bb = sample(c("maybe","no","yes"), 15, replace=TRUE, prob=c(0.2, 0.6, 0.2))
+aa = sample(c("yes","no","maybe"), 15, replace=TRUE, prob=c(0.5, 0.3, 0.2))
+ab = sample(c("yes","no","maybe"), 15, replace=TRUE, prob=c(0.3, 0.2, 0.5))
+ba = sample(c("yes","no","maybe"), 15, replace=TRUE, prob=c(0.2, 0.5, 0.3))
+bb = sample(c("yes","no","maybe"), 15, replace=TRUE, prob=c(0.2, 0.6, 0.2))
 df = data.frame(
   PId = factor(seq(1, 60, 1)),
   X1 = factor(rep(c("a","b"), each=30)),
   X2 = factor(rep(rep(c("a","b"), each=15), times=2)),
-  Y = factor(c(aa,ab,ba,bb))
+  Y = factor(c(aa,ab,ba,bb), levels=c("yes","no","maybe"))
 )
 contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
@@ -677,11 +677,11 @@ View(df)
 
 ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
-  "maybe"=sum(data$Y == "maybe"),
+  "yes"=sum(data$Y == "yes"),
   "no"=sum(data$Y == "no"),
-  "yes"=sum(data$Y == "yes")
+  "maybe"=sum(data$Y == "maybe")
 ))
-mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X", col=c("lightyellow","pink","lightgreen"))
+mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=c("lightgreen","pink","lightyellow"))
 
 m0 = multinom(Y ~ X1 * X2, data=df, trace=FALSE)
 Anova(m0, type=3)
