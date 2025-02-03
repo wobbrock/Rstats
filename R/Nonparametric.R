@@ -65,6 +65,7 @@ print(check_homogeneity(m0))
 median_test(Y ~ X, data=df)
 
 
+
 ##
 #### 2. Mann-Whitney U test ####
 #
@@ -96,6 +97,7 @@ print(check_normality(m0))
 print(check_homogeneity(m0))
 
 wilcox_test(Y ~ X, data=df) # Mann-Whitney U test
+
 
 
 ##
@@ -137,6 +139,7 @@ print(check_homogeneity(m0))
 sign_test(Y ~ X | PId, data=df)
 
 
+
 ##
 #### 4. Wilcoxon signed-rank test ####
 #
@@ -170,7 +173,6 @@ print(check_normality(m0))
 print(check_homogeneity(m0))
 
 wilcoxsign_test(Y ~ X | PId, data=df, distribution="exact") # Wilcoxon signed-rank test
-
 
 
 
@@ -222,6 +224,7 @@ wilcoxonZ(df[df$X == "a",]$Y, df[df$X == "c",]$Y)
 wilcoxonZ(df[df$X == "b",]$Y, df[df$X == "c",]$Y)
 
 
+
 ##
 #### 6. Friedman test ####
 #
@@ -267,7 +270,6 @@ p.adjust(c(ab$p.value, ac$p.value, bc$p.value), method="holm") # p-values
 wilcoxonZ(df2$a, df2$b, paired=TRUE) # Z-scores
 wilcoxonZ(df2$a, df2$c, paired=TRUE)
 wilcoxonZ(df2$b, df2$c, paired=TRUE)
-
 
 
 
@@ -345,6 +347,7 @@ art.con(m, ~ X1*X2, adjust="holm") %>%  # run ART-C for X1×X2
 # difference in condition C is significantly different than the A vs. B difference in condition 
 # D. It is a "difference of differences" contrast.
 art.con(m, ~ X1*X2, adjust="holm", interaction=TRUE)
+
 
 
 ##

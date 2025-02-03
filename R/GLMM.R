@@ -176,7 +176,8 @@ ddply(df, ~ X, function(data) c(
 ))
 mosaicplot( ~ X + Y, data=df, main="Y by X", col=c("lightgreen","pink","lightyellow"))
 
-m = glmer.mp(Y ~ X + (1|PId), data=df) # use the multinomial-Poisson trick
+# use the multinomial-Poisson trick
+m = glmer.mp(Y ~ X + (1|PId), data=df)
 Anova.mp(m, type=3)
 glmer.mp.con(m, pairwise ~ X, adjust="holm")
 
@@ -506,7 +507,6 @@ emmeans(m, pairwise ~ X, adjust="holm")
 
 
 
-
 ###
 #### Multiple Within-Ss. Factors (2x2) ####
 ###
@@ -712,7 +712,8 @@ ddply(df, ~ X1 + X2, function(data) c(
 ))
 mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=c("lightgreen","pink","lightyellow"))
 
-m = glmer.mp(Y ~ X1*X2 + (1|PId), data=df) # use the multinomial-Poisson trick
+# use the multinomial-Poisson trick
+m = glmer.mp(Y ~ X1*X2 + (1|PId), data=df)
 Anova.mp(m, type=3)
 glmer.mp.con(m, pairwise ~ X1*X2, adjust="holm")
 

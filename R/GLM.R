@@ -169,9 +169,16 @@ mosaicplot( ~ X + Y, data=df, main="Y by X", col=c("lightgreen","pink","lightyel
 
 m0 = multinom(Y ~ X, data=df, trace=FALSE)
 Anova(m0, type=3)
-# post hoc tests with emmeans are thorny for multinom models
 
-m = glm.mp(Y ~ X, data=df) # use the multinomial-Poisson trick
+# post hoc tests on multinom models are not straightforward.
+# this solution was offered by Russ Lenth, author of emmeans,
+# in a post on StackExchange. it seems excessively conservative.
+e0 = emmeans(m0, ~ X | Y, mode="latent")
+c0 = contrast(e0, method="pairwise", ref=1)
+emmeans::test(c0, joint=TRUE, by="contrast")
+
+# instead, use the multinomial-Poisson trick
+m = glm.mp(Y ~ X, data=df)
 Anova.mp(m, type=3)
 glm.mp.con(m, pairwise ~ X, adjust="holm")
 
@@ -485,7 +492,6 @@ emmeans(m, pairwise ~ X, adjust="holm")
 
 
 
-
 ###
 #### Multiple Between-Ss. Factors (2x2) ####
 ###
@@ -683,11 +689,17 @@ ddply(df, ~ X1 + X2, function(data) c(
 ))
 mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=c("lightgreen","pink","lightyellow"))
 
+# post hoc tests on multinom models are not straightforward.
+# this solution was offered by Russ Lenth, author of emmeans,
+# in a post on StackExchange. it seems excessively conservative.
 m0 = multinom(Y ~ X1 * X2, data=df, trace=FALSE)
 Anova(m0, type=3)
-# post hoc tests with emmeans are thorny for multinom models
+e0 = emmeans(m0, ~ X1*X2 | Y, mode="latent")
+c0 = contrast(e0, method="pairwise", ref=1)
+emmeans::test(c0, joint=TRUE, by="contrast")
 
-m = glm.mp(Y ~ X1 * X2, data=df) # use the multinomial-Poisson trick
+# instead, use the multinomial-Poisson trick
+m = glm.mp(Y ~ X1 * X2, data=df)
 Anova.mp(m, type=3)
 glm.mp.con(m, pairwise ~ X1*X2, adjust="holm")
 

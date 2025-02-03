@@ -173,7 +173,6 @@ emmeans(m, pairwise ~ X, adjust="holm")
 
 
 
-
 ###
 #### Multiple Between-Ss. Factors ####
 ###
@@ -282,7 +281,6 @@ Anova(m, type=3, white.adjust=TRUE) # if p<.05, violation of homogeneity
 
 ## post hoc pairwise comparisons
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
-
 
 
 
