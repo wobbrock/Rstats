@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### October 23, 2021
-### Updated: 11/10/2024
+### Updated: 2/08/2025
 ###
 
 ###
@@ -24,8 +24,8 @@ library(emmeans)  # for emmeans
 ### R code for common covariance structures. 
 ### See ?nlme::corClasses, ?nlme::varClasses.
 ### See also https://rpubs.com/samuelkn/CovarianceStructuresInR
-### See also https://www.ibm.com/docs/en/spss-statistics/26.0.0?topic=mixed-covariance-structure-list-command
-### See also https://www.ibm.com/docs/en/spss-statistics/26.0.0?topic=statistics-covariance-structures
+### See also https://www.ibm.com/docs/en/spss-statistics/30.0.0?topic=mixed-covariance-structure-list-command
+### See also https://www.ibm.com/docs/en/spss-statistics/30.0.0?topic=statistics-covariance-structures
 
 ## Dummy data has one repeated factor X with three levels (a,b,c) and continuous response Y
 set.seed(123)
