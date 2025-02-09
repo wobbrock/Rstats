@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### November 26, 2018
-### Updated: 11/10/2024
+### Updated: 2/08/2025
 ###
 
 ###
@@ -335,7 +335,7 @@ m = art(Y ~ X1*X2, data=df)
 anova(m)
 
 ## Post hoc ART-C contrast tests
-art.con(m, ~ X1*X2, adjust="holm") %>%  # run ART-C for X1×X2
+art.con(m, ~ X1*X2, adjust="holm") %>%  # run ART-C for X1 × X2
   summary() %>%  # add significance stars to the output
   plyr::mutate(sig. = symnum(p.value, corr=FALSE, na=FALSE, 
                              cutpoints = c(0, .001, .01, .05, .10, 1), 
@@ -404,7 +404,7 @@ arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]
 
 m0 = lmer(Y ~ X1*X2 + (1|PId), data=df)
 print(check_normality(m0))
-print(check_homogeneity(m0))
+# no need with an LMM to check for sphericity!
 
 m = art(Y ~ X1*X2 + (1|PId), data=df) # PId is a random factor
 anova(m)

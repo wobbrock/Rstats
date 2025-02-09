@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### August 2, 2023
-### Updated: 11/10/2024
+### Updated: 2/08/2025
 ###
 
 ###
@@ -60,7 +60,7 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(10, 80, 10), labels=seq(10, 80, 10))
   axis(side=2, at=seq(0, 0.05, 0.01), labels=seq(0, 0.05, 0.01))
-  curve(dnorm(x, mean=fa$distribution.parameters[1], sd=fa$distribution.parameters[2]), col="red", lty=1, lwd=3, add=TRUE)
+  curve(dnorm(x, mean=fa$distribution.parameters[1], sd=fa$distribution.parameters[2]), lty=1, lwd=3, col="red", add=TRUE)
   
   hist(df[df$X == "b",]$Y, 
        main="Histogram of Y for X=b", 
@@ -74,7 +74,7 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(10, 80, 10), labels=seq(10, 80, 10))
   axis(side=2, at=seq(0, 0.05, 0.01), labels=seq(0, 0.05, 0.01))
-  curve(dnorm(x, mean=fb$distribution.parameters[1], sd=fb$distribution.parameters[2]), col="blue", lty=1, lwd=3, add=TRUE)
+  curve(dnorm(x, mean=fb$distribution.parameters[1], sd=fb$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
 par(mfrow=c(1,1))
 
 print(fa)
@@ -123,7 +123,7 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(0, 140, 20), labels=seq(0, 140, 20))
   axis(side=2, at=seq(0, 0.06, 0.01), labels=seq(0, 0.06, 0.01))
-  curve(dlnorm(x, meanlog=fa$distribution.parameters[1], sdlog=fa$distribution.parameters[2]), col="red", lty=1, lwd=3, add=TRUE)
+  curve(dlnorm(x, meanlog=fa$distribution.parameters[1], sdlog=fa$distribution.parameters[2]), lty=1, lwd=3, col="red", add=TRUE)
   
   hist(df[df$X == "b",]$Y, 
        main="Histogram of Y for X=b", 
@@ -137,7 +137,7 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(0, 140, 20), labels=seq(0, 140, 20))
   axis(side=2, at=seq(0, 0.06, 0.01), labels=seq(0, 0.06, 0.01))
-  curve(dlnorm(x, meanlog=fb$distribution.parameters[1], sdlog=fb$distribution.parameters[2]), col="blue", lty=1, lwd=3, add=TRUE)
+  curve(dlnorm(x, meanlog=fb$distribution.parameters[1], sdlog=fb$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
 par(mfrow=c(1,1))
 
 print(fa)
@@ -173,7 +173,6 @@ ddply(df, ~ X, function(data) c(
 fa = fitdist(df[df$X == "a",]$Y, distr="pois")
 fb = fitdist(df[df$X == "b",]$Y, distr="pois")
 
-x = seq(floor(min(df$Y)), ceiling(max(df$Y)), by=1)
 par(mfrow=c(2,1))
   hist(df[df$X == "a",]$Y, 
        main="Histogram of Y for X=a", 
@@ -187,8 +186,9 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(0, 12, 2), labels=seq(0, 12, 2))
   axis(side=2, at=seq(0, 0.20, 0.05), labels=seq(0, 0.20, 0.05))
-  curve(dpois(round(x,0), lambda=fa$estimate[1]), col="red", lty=1, lwd=3, add=TRUE)
-  lines(x, dpois(x, lambda=fa$estimate[1]), lwd=3, col="darkred")
+  curve(dpois(round(x,0), lambda=fa$estimate[1]), lty=1, lwd=3, col="red", add=TRUE)
+  xa = seq(floor(min(df[df$X == "a",]$Y)), ceiling(max(df[df$X == "a",]$Y)), by=1)
+  lines(xa, dpois(xa, lambda=fa$estimate[1]), lty=1, lwd=3, col="darkred")
   
   hist(df[df$X == "b",]$Y, 
        main="Histogram of Y for X=b", 
@@ -202,8 +202,9 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(0, 12, 2), labels=seq(0, 12, 2))
   axis(side=2, at=seq(0, 0.20, 0.05), labels=seq(0, 0.20, 0.05))
-  curve(dpois(round(x,0), lambda=fb$estimate[1]), col="blue", lty=1, lwd=3, add=TRUE)
-  lines(x, dpois(x, lambda=fb$estimate[1]), lwd=3, col="darkblue")
+  curve(dpois(round(x,0), lambda=fb$estimate[1]), lty=1, lwd=3, col="blue", add=TRUE)
+  xb = seq(floor(min(df$Y)), ceiling(max(df$Y)), by=1)
+  lines(xb, dpois(xb, lambda=fb$estimate[1]), lty=1, lwd=3, col="darkblue")
 par(mfrow=c(1,1))
 
 gofstat(fa)
@@ -247,7 +248,6 @@ ddply(df, ~ X, function(data) c(
 fa = fitdist(df[df$X == "a",]$Y, distr="nbinom")
 fb = fitdist(df[df$X == "b",]$Y, distr="nbinom")
 
-x = seq(floor(min(df$Y)), ceiling(max(df$Y)), by=1)
 par(mfrow=c(2,1))
   hist(df[df$X == "a",]$Y, 
        main="Histogram of Y for X=a", 
@@ -261,8 +261,9 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(0, 16, 2), labels=seq(0, 16, 2))
   axis(side=2, at=seq(0, 0.25, 0.05), labels=seq(0, 0.25, 0.05))
-  curve(dnbinom(round(x,0), size=fa$estimate[1], mu=fa$estimate[2]), col="red", lty=1, lwd=3, add=TRUE)
-  lines(x, dnbinom(x, size=fa$estimate[1], mu=fa$estimate[2]), lwd=3, col="darkred")
+  curve(dnbinom(round(x,0), size=fa$estimate[1], mu=fa$estimate[2]), lty=1, lwd=3, col="red", add=TRUE)
+  xa = seq(floor(min(df[df$X == "a",]$Y)), ceiling(max(df[df$X == "a",]$Y)), by=1)
+  lines(xa, dnbinom(xa, size=fa$estimate[1], mu=fa$estimate[2]), lty=1, lwd=3, col="darkred")
   
   hist(df[df$X == "b",]$Y, 
        main="Histogram of Y for X=b", 
@@ -276,8 +277,9 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(0, 16, 2), labels=seq(0, 16, 2))
   axis(side=2, at=seq(0, 0.25, 0.05), labels=seq(0, 0.25, 0.05))
-  curve(dnbinom(round(x,0), size=fb$estimate[1], mu=fb$estimate[2]), col="blue", lty=1, lwd=3, add=TRUE)
-  lines(x, dnbinom(x, size=fb$estimate[1], mu=fb$estimate[2]), lwd=3, col="darkblue")
+  curve(dnbinom(round(x,0), size=fb$estimate[1], mu=fb$estimate[2]), lty=1, lwd=3, col="blue", add=TRUE)
+  xb = seq(floor(min(df[df$X == "b",]$Y)), ceiling(max(df[df$X == "b",]$Y)), by=1)
+  lines(xb, dnbinom(xb, size=fb$estimate[1], mu=fb$estimate[2]), lty=1, lwd=3, col="darkblue")
 par(mfrow=c(1,1))
 
 gofstat(fa)
@@ -334,7 +336,7 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(0, 90, 10), labels=seq(0, 90, 10))
   axis(side=2, at=seq(0, 0.1, 0.025), labels=seq(0, 0.1, 0.025))
-  curve(dexp(x, rate=fa$distribution.parameters[1]), col="red", lty=1, lwd=3, add=TRUE)
+  curve(dexp(x, rate=fa$distribution.parameters[1]), lty=1, lwd=3, col="red", add=TRUE)
   
   hist(df[df$X == "b",]$Y, 
        main="Histogram of Y for X=b", 
@@ -348,7 +350,7 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(0, 90, 10), labels=seq(0, 90, 10))
   axis(side=2, at=seq(0, 0.1, 0.025), labels=seq(0, 0.1, 0.025))
-  curve(dexp(x, rate=fb$distribution.parameters[1]), col="blue", lty=1, lwd=3, add=TRUE)
+  curve(dexp(x, rate=fb$distribution.parameters[1]), lty=1, lwd=3, col="blue", add=TRUE)
 par(mfrow=c(1,1))
 
 print(fa)
@@ -397,7 +399,7 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(0, 40, 5), labels=seq(0, 40, 5))
   axis(side=2, at=seq(0, 0.12, 0.02), labels=seq(0, 0.12, 0.02))
-  curve(dgamma(x, shape=fa$distribution.parameters[1], scale=fa$distribution.parameters[2]), col="red", lty=1, lwd=3, add=TRUE)
+  curve(dgamma(x, shape=fa$distribution.parameters[1], scale=fa$distribution.parameters[2]), lty=1, lwd=3, col="red", add=TRUE)
   
   hist(df[df$X == "b",]$Y, 
        main="Histogram of Y for X=b", 
@@ -411,7 +413,7 @@ par(mfrow=c(2,1))
   )
   axis(side=1, at=seq(0, 40, 5), labels=seq(0, 40, 5))
   axis(side=2, at=seq(0, 0.12, 0.02), labels=seq(0, 0.12, 0.02))
-  curve(dgamma(x, shape=fa$distribution.parameters[1], scale=fa$distribution.parameters[2]), col="blue", lty=1, lwd=3, add=TRUE)
+  curve(dgamma(x, shape=fa$distribution.parameters[1], scale=fa$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
 par(mfrow=c(1,1))
 
 print(fa)

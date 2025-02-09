@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### March 12, 2019
-### Updated: 11/10/2024
+### Updated: 2/08/2025
 ###
 
 ###
@@ -16,6 +16,7 @@
 library(plyr) # for ddply
 library(afex) # for aov_ez
 library(performance) # for check_normality, check_homogeneity, check_sphericity
+library(EnvStats) # for gofTest
 library(lme4) # for lmer
 library(lmerTest)
 library(car) # for Anova
@@ -116,13 +117,14 @@ arrows(x0=2-dx, y0=msd[3,]$Mean - msd[3,]$SD, x1=2-dx, y1=msd[3,]$Mean + msd[3,]
 arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
 
 m = aov_ez(dv="Y", between=c("X1","X2"), id="PId", type=3, data=df)
-
 r = residuals(m$lm) # extract residuals
 mean(r); sum(r) # both should be ~0
-plot(r[1:length(r)], main="Residual plot"); abline(h=0) # should look random
-hist(r, main="Histogram of residuals") # should look normal
+plot(r[1:length(r)], main="Residuals"); abline(h=0) # should look random
 qqnorm(r); qqline(r) # Q-Q plot
-
+hist(r, main="Histogram of residuals", freq=FALSE) # should look normal
+f = gofTest(r, distribution="norm") # GOF test
+curve(dnorm(x, mean=f$distribution.parameters[1], sd=f$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
+print(f) # display fit
 shapiro.test(r) # Shapiro-Wilk test
 print(check_normality(m)) # same
 
@@ -172,13 +174,14 @@ arrows(x0=2-dx, y0=msd[3,]$Mean - msd[3,]$SD, x1=2-dx, y1=msd[3,]$Mean + msd[3,]
 arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
 
 m = aov_ez(dv="Y", within=c("X1","X2"), id="PId", type=3, data=df)
-
 r = residuals(m$lm) # extract residuals
 mean(r); sum(r) # both should be ~0
-plot(r[1:length(r)], main="Residual plot"); abline(h=0) # should look random
-hist(r, main="Histogram of residuals") # should look normal
+plot(r[1:length(r)], main="Residuals"); abline(h=0) # should look random
 qqnorm(r); qqline(r) # Q-Q plot
-
+hist(r, main="Histogram of residuals", freq=FALSE) # should look normal
+f = gofTest(r, distribution="norm") # GOF test
+curve(dnorm(x, mean=f$distribution.parameters[1], sd=f$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
+print(f) # display fit
 shapiro.test(r) # Shapiro-Wilk test
 print(check_normality(m)) # same
 
@@ -228,13 +231,14 @@ arrows(x0=2-dx, y0=msd[3,]$Mean - msd[3,]$SD, x1=2-dx, y1=msd[3,]$Mean + msd[3,]
 arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
 
 m = lmer(Y ~ X1*X2 + (1|PId), data=df) # make linear mixed model
-
 r = residuals(m) # extract model residuals
 mean(r); sum(r) # both should be ~0
-plot(r[1:length(r)], main="Residual plot"); abline(h=0) # should look random
-hist(r, main="Histogram of residuals") # should look normal
+plot(r[1:length(r)], main="Residuals"); abline(h=0) # should look random
 qqnorm(r); qqline(r) # Q-Q plot
-
+hist(r, main="Histogram of residuals", freq=FALSE) # should look normal
+f = gofTest(r, distribution="norm") # GOF test
+curve(dnorm(x, mean=f$distribution.parameters[1], sd=f$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
+print(f) # display fit
 shapiro.test(r) # Shapiro-Wilk test
 print(check_normality(m)) # same
 
@@ -292,8 +296,12 @@ print(check_homogeneity(m)) # Levene's test
 plot(Y ~ X1, data=df, main="Y by X1")
 t.test(Y ~ X1, data=df, var.equal=FALSE)
 
-# ...or a White-adjusted ANOVA for >1 factor or >2 levels
-Anova(m$lm, type=3, white.adjust=TRUE) # shows between-Ss. factors only
+# ...or a Welch ANOVA for one factor of >2 levels...
+oneway.test(Y ~ X1, data=df, var.equal=FALSE)
+
+# ...or a White-adjusted ANOVA for >1 factor (with within-Ss. factors, use an LMM)
+m = lmer(Y ~ X1*X2 + (1|PId), data=df)
+Anova(m, type=3, test.statistic="F", white.adjust=TRUE)
 
 
 
@@ -343,6 +351,7 @@ arrows(x0=2-dx, y0=msd[3,]$Mean - msd[3,]$SD, x1=2-dx, y1=msd[3,]$Mean + msd[3,]
 arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
 
 m = aov_ez(dv="Y", between="X1", within="X2", id="PId", type=3, data=df)
+summary(m)$sphericity.tests
 print(check_sphericity(m))
 
 # one-way repeated measures ANOVA

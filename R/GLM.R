@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### March 12, 2019
-### Updated: 1/17/2025
+### Updated: 2/08/2025
 ###
 
 ###
@@ -15,7 +15,7 @@
 
 library(plyr) # for ddply
 library(car) # for Anova
-library(emmeans) # for emmeans
+library(emmeans) # for emmeans, test
 library(nnet) # for multinom
 library(multpois) # for glm.mp, Anova.mp, glm.mp.con
 library(MASS) # for polr
@@ -173,9 +173,10 @@ Anova(m0, type=3)
 # post hoc tests on multinom models are not straightforward.
 # this solution was offered by Russ Lenth, author of emmeans,
 # in a post on StackExchange. it seems excessively conservative.
-e0 = emmeans(m0, ~ X | Y, mode="latent")
-c0 = contrast(e0, method="pairwise", ref=1)
-emmeans::test(c0, joint=TRUE, by="contrast")
+emmeans::test(
+  contrast(emmeans(m0, ~ X | Y, mode="latent"), method="pairwise", ref=1), 
+  joint=TRUE, by="contrast"
+)
 
 # instead, use the multinomial-Poisson trick
 m = glm.mp(Y ~ X, data=df)
@@ -689,14 +690,16 @@ ddply(df, ~ X1 + X2, function(data) c(
 ))
 mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=c("lightgreen","pink","lightyellow"))
 
+m0 = multinom(Y ~ X1 * X2, data=df, trace=FALSE)
+Anova(m0, type=3)
+
 # post hoc tests on multinom models are not straightforward.
 # this solution was offered by Russ Lenth, author of emmeans,
 # in a post on StackExchange. it seems excessively conservative.
-m0 = multinom(Y ~ X1 * X2, data=df, trace=FALSE)
-Anova(m0, type=3)
-e0 = emmeans(m0, ~ X1*X2 | Y, mode="latent")
-c0 = contrast(e0, method="pairwise", ref=1)
-emmeans::test(c0, joint=TRUE, by="contrast")
+emmeans::test(
+  contrast(emmeans(m0, ~ X1*X2 | Y, mode="latent"), method="pairwise", ref=1), 
+  joint=TRUE, by="contrast"
+)
 
 # instead, use the multinomial-Poisson trick
 m = glm.mp(Y ~ X1 * X2, data=df)

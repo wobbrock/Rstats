@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### November 13, 2019
-### Updated: 11/10/2024
+### Updated: 2/08/2025
 ###
 
 ###
@@ -20,7 +20,7 @@ library(afex) # for aov_ez
 library(performance) # for check_homogeneity, check_sphericity
 library(lme4) # for lmer
 library(lmerTest)
-library(emmeans) # for emm, emmeans
+library(emmeans) # for emmeans
 
 
 ###
@@ -56,7 +56,7 @@ plot(Y ~ X, data=df, main="Y by X")
 leveneTest(Y ~ X, data=df, center=mean) # check homogeneity of variance
 
 t.test(Y ~ X, data=df, var.equal=TRUE)  # if p≥.05, no violation of homogeneity
-t.test(Y ~ X, data=df, var.equal=FALSE) # if p<.05, no violation of homogeneity
+t.test(Y ~ X, data=df, var.equal=FALSE) # if p<.05, Welch t-test
 
 
 
@@ -89,7 +89,7 @@ ddply(df, ~ X, function(data) c(
 plot(Y ~ X, data=df, main="Y by X")
 
 df2 <- dcast(df, PId ~ X, value.var="Y") # make wide-format table
-t.test(df2$a, df2$b, paired=TRUE) # neither homogeneity nor sphericity applies to a paired t-test
+t.test(df2$a, df2$b, paired=TRUE)        # neither homogeneity nor sphericity applies to a paired t-test
 
 
 
@@ -121,11 +121,12 @@ ddply(df, ~ X, function(data) c(
 plot(Y ~ X, data=df, main="Y by X")
 
 m = aov_ez(dv="Y", between="X", id="PId", type=3, data=df)
-print(check_homogeneity(m)) # Levene's test
 leveneTest(Y ~ X, data=df, center=mean) # same
+print(check_homogeneity(m)) # Levene's test
 
-anova(m) # if p≥.05, no violation of homogeneity
-Anova(m$lm, type=3, white.adjust=TRUE) # if p<.05, violation of homogeneity
+anova(m) # use if p≥.05, no violation of homoscedasticity, else use...
+oneway.test(Y ~ X, data=df, var.equal=FALSE)  # Welch ANOVA
+Anova(m$lm, type=3, white.adjust=TRUE)        # White-adjusted ANOVA
 
 ## post hoc pairwise comparisons
 emmeans(m, pairwise ~ X, adjust="holm")
@@ -162,8 +163,8 @@ ddply(df, ~ X, function(data) c(
 plot(Y ~ X, data=df, main="Y by X")
 
 m = aov_ez(dv="Y", within="X", id="PId", type=3, data=df)
-summary(m) # shows Mauchly's test
-print(check_sphericity(m)) # Mauchly's test
+summary(m)$sphericity.tests # Mauchly's test of sphericity
+print(check_sphericity(m))  # same
 
 anova(m, correction="none") # use if p≥.05, no violation of sphericity
 anova(m, correction="GG")   # use if p<.05, sphericity violation
@@ -219,11 +220,11 @@ arrows(x0=2-dx, y0=msd[3,]$Mean - msd[3,]$SD, x1=2-dx, y1=msd[3,]$Mean + msd[3,]
 arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
 
 m = aov_ez(dv="Y", between=c("X1","X2"), id="PId", type=3, data=df)
-print(check_homogeneity(m)) # Levene's test
 leveneTest(Y ~ X1*X2, data=df, center=mean) # same
+print(check_homogeneity(m)) # Levene's test
 
-anova(m) # if p≥.05, no violation of homogeneity
-Anova(m$lm, type=3, white.adjust=TRUE) # if p<.05, violation of homogeneity
+anova(m) # use if p≥.05, no violation of homoscedasticity, else use...
+Anova(m$lm, type=3, white.adjust=TRUE) # White-adjusted ANOVA
 
 ## post hoc pairwise comparisons
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
@@ -273,11 +274,11 @@ arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]
 
 m = lm(Y ~ X1*X2, data=df)  # fit model
 m = aov(Y ~ X1*X2, data=df) # equivalent
-print(check_homogeneity(m)) # Levene's test
-leveneTest(Y ~ X1*X2, data=df, center=mean) # same
+leveneTest(Y ~ X1*X2, data=df, center=mean) # Levene's test
+print(check_homogeneity(m)) # same
 
-anova(m) # if p≥.05, no violation of homogeneity
-Anova(m, type=3, white.adjust=TRUE) # if p<.05, violation of homogeneity
+anova(m) # use if p≥.05, no violation of homogeneity, else use...
+Anova(m, type=3, white.adjust=TRUE) # White-adjusted ANOVA
 
 ## post hoc pairwise comparisons
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
@@ -332,10 +333,11 @@ arrows(x0=2-dx, y0=msd[3,]$Mean - msd[3,]$SD, x1=2-dx, y1=msd[3,]$Mean + msd[3,]
 arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
 
 m = aov_ez(dv="Y", within=c("X1","X2"), id="PId", type=3, data=df) # fit model
-print(check_sphericity(m)) # Mauchly's test
+summary(m)$sphericity.tests # Mauchly's test of sphericity
+print(check_sphericity(m))  # same
 
 anova(m, correction="none") # use if p≥.05, no violation of sphericity
-anova(m, correction="GG")   # use if p<.05, sphericity violation
+anova(m, correction="GG")   # Greenhouse-Geisser correction
 
 ## post hoc pairwise comparisons
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
