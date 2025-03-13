@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### March 12, 2019
-### Updated: 2/08/2025
+### Updated: 3/12/2025
 ###
 
 ###
@@ -172,7 +172,7 @@ Anova(m0, type=3)
 
 # post hoc tests on multinom models are not straightforward.
 # this solution was offered by Russ Lenth, author of emmeans,
-# in a post on StackExchange. it seems excessively conservative.
+# in a post on StackExchange.
 emmeans::test(
   contrast(emmeans(m0, ~ X | Y, mode="latent"), method="pairwise", ref=1), 
   joint=TRUE, by="contrast"
@@ -190,9 +190,9 @@ glm.mp.con(m, pairwise ~ X, adjust="holm")
 ##
 # df has one between-Ss. factor (X) w/levels (a,b,c) and ordinal response (1-7)
 set.seed(123)
-a = sample(1:7, 20, replace=TRUE, prob=c(0.10, 0.10, 0.20, 0.30, 0.40, 0.40, 0.20))
-b = sample(1:7, 20, replace=TRUE, prob=c(0.80, 0.70, 0.60, 0.30, 0.40, 0.20, 0.10))
-c = sample(1:7, 20, replace=TRUE, prob=c(0.00, 0.20, 0.10, 0.90, 0.80, 0.80, 0.70))
+a = laply(round(rnorm(20, mean=4.15, sd=1.55), digits=0), function(x) min(max(x, 1), 7))
+b = laply(round(rnorm(20, mean=4.55, sd=1.65), digits=0), function(x) min(max(x, 1), 7))
+c = laply(round(rnorm(20, mean=3.20, sd=1.50), digits=0), function(x) min(max(x, 1), 7))
 df = data.frame(
   PId = factor(seq(1, 60, 1)),
   X = factor(rep(c("a","b","c"), each=20)),
@@ -212,7 +212,7 @@ ddply(df, ~ X, function(data) c(
 ))
 mosaicplot( ~ X + Y, data=df, main="Y by X", col=terrain.colors(7))
 
-boxplot(Y ~ X, main="Y by X", data=df, col=c("pink","lightblue","lightgreen"))
+boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
 
 par(mfrow=c(3,1))
   hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="pink")
@@ -695,7 +695,7 @@ Anova(m0, type=3)
 
 # post hoc tests on multinom models are not straightforward.
 # this solution was offered by Russ Lenth, author of emmeans,
-# in a post on StackExchange. it seems excessively conservative.
+# in a post on StackExchange.
 emmeans::test(
   contrast(emmeans(m0, ~ X1*X2 | Y, mode="latent"), method="pairwise", ref=1), 
   joint=TRUE, by="contrast"
@@ -713,10 +713,10 @@ glm.mp.con(m, pairwise ~ X1*X2, adjust="holm")
 ##
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and ordinal response (1-7)
 set.seed(123)
-aa = sample(1:7, 15, replace=TRUE, prob=c(0.10, 0.10, 0.20, 0.30, 0.40, 0.30, 0.20))
-ab = sample(1:7, 15, replace=TRUE, prob=c(0.15, 0.10, 0.20, 0.20, 0.20, 0.30, 0.50))
-ba = sample(1:7, 15, replace=TRUE, prob=c(0.10, 0.20, 0.20, 0.20, 0.20, 0.10, 0.05))
-bb = sample(1:7, 15, replace=TRUE, prob=c(0.55, 0.60, 0.50, 0.50, 0.40, 0.35, 0.35))
+aa = laply(round(rnorm(15, mean=5.25, sd=1.00), digits=0), function(x) min(max(x, 1), 7))
+ab = laply(round(rnorm(15, mean=4.15, sd=1.25), digits=0), function(x) min(max(x, 1), 7))
+ba = laply(round(rnorm(15, mean=2.95, sd=1.35), digits=0), function(x) min(max(x, 1), 7))
+bb = laply(round(rnorm(15, mean=3.35, sd=1.30), digits=0), function(x) min(max(x, 1), 7))
 df = data.frame(
   PId = factor(seq(1, 60, 1)),
   X1 = factor(rep(c("a","b"), each=30)),
@@ -761,10 +761,10 @@ arrows(x0=2-dx, y0=msd[3,]$Mean - msd[3,]$SD, x1=2-dx, y1=msd[3,]$Mean + msd[3,]
 arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
 
 par(mfrow=c(4,1))
-  hist(df[df$X1 == "a" & df$X2 == "a",]$Y, main="Y by (a,a)", xlab="Y", xlim=c(1,7), ylim=c(0,7), breaks=seq(1,7,1), col="pink")
-  hist(df[df$X1 == "a" & df$X2 == "b",]$Y, main="Y by (a,b)", xlab="Y", xlim=c(1,7), ylim=c(0,7), breaks=seq(1,7,1), col="red")
-  hist(df[df$X1 == "b" & df$X2 == "a",]$Y, main="Y by (b,a)", xlab="Y", xlim=c(1,7), ylim=c(0,7), breaks=seq(1,7,1), col="lightblue")
-  hist(df[df$X1 == "b" & df$X2 == "b",]$Y, main="Y by (b,b)", xlab="Y", xlim=c(1,7), ylim=c(0,7), breaks=seq(1,7,1), col="blue")
+  hist(df[df$X1 == "a" & df$X2 == "a",]$Y, main="Y by (a,a)", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="pink")
+  hist(df[df$X1 == "a" & df$X2 == "b",]$Y, main="Y by (a,b)", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="red")
+  hist(df[df$X1 == "b" & df$X2 == "a",]$Y, main="Y by (b,a)", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="lightblue")
+  hist(df[df$X1 == "b" & df$X2 == "b",]$Y, main="Y by (b,b)", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="blue")
 par(mfrow=c(1,1))
 
 df$Y = ordered(df$Y)

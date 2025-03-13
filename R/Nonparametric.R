@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### November 26, 2018
-### Updated: 2/08/2025
+### Updated: 3/12/2025
 ###
 
 ###
@@ -13,15 +13,20 @@
 ### (Nonparametric analyses of differences)
 ###
 
-library(plyr) # for ddply, mutate
-library(dplyr) # for %>%
+library(plyr)   # for ddply, mutate
+library(dplyr)  # for %>%
 library(performance) # for check_*
-library(coin) # for median_test, wilcox_test, sign_test, wilcoxsign_test, kruskal_test, friedman_test
-library(lme4) # for lmer
+library(lme4)   # for lmer
 library(lmerTest) 
 library(rcompanion) # for wilcoxonZ
-library(reshape2) # for dcast
+library(reshape2)   # for dcast
 library(ARTool) # for art, art.con
+library(coin)   # for median_test, 
+                #     sign_test, 
+                #     wilcox_test, 
+                #     wilcoxsign_test, 
+                #     kruskal_test, 
+                #     friedman_test
 
 
 ##
@@ -67,41 +72,7 @@ median_test(Y ~ X, data=df)
 
 
 ##
-#### 2. Mann-Whitney U test ####
-#
-# df has one between-Ss. factor (X) w/levels (a,b) and continuous response (Y)
-set.seed(123)
-a = round(rnorm(30, 30.0, 12.0), digits=2)
-b = round(rnorm(30, 45.0, 15.0), digits=2)
-df = data.frame(
-  PId = factor(seq(1, 60, 1)),
-  X = factor(rep(c("a","b"), each=30)),
-  Y = c(a,b)
-)
-contrasts(df$X) <- "contr.sum"
-View(df)
-
-ddply(df, ~ X, function(data) c(
-  "Nrows"=nrow(data),
-  "Min"=min(data$Y),
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y),
-  "Median"=median(data$Y),
-  "IQR"=IQR(data$Y),
-  "Max"=max(data$Y)
-))
-plot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue"))
-
-m0 = lm(Y ~ X, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
-
-wilcox_test(Y ~ X, data=df) # Mann-Whitney U test
-
-
-
-##
-#### 3. Sign test ####
+#### 2. Sign test ####
 #
 # df has one within-Ss. factor (X) w/levels (a,b) and a (1,0) response
 set.seed(123)
@@ -137,6 +108,40 @@ print(check_normality(m0))
 print(check_homogeneity(m0))
 
 sign_test(Y ~ X | PId, data=df)
+
+
+
+##
+#### 3. Mann-Whitney U test ####
+#
+# df has one between-Ss. factor (X) w/levels (a,b) and continuous response (Y)
+set.seed(123)
+a = round(rnorm(30, 30.0, 12.0), digits=2)
+b = round(rnorm(30, 45.0, 15.0), digits=2)
+df = data.frame(
+  PId = factor(seq(1, 60, 1)),
+  X = factor(rep(c("a","b"), each=30)),
+  Y = c(a,b)
+)
+contrasts(df$X) <- "contr.sum"
+View(df)
+
+ddply(df, ~ X, function(data) c(
+  "Nrows"=nrow(data),
+  "Min"=min(data$Y),
+  "Mean"=mean(data$Y), 
+  "SD"=sd(data$Y),
+  "Median"=median(data$Y),
+  "IQR"=IQR(data$Y),
+  "Max"=max(data$Y)
+))
+plot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue"))
+
+m0 = lm(Y ~ X, data=df)
+print(check_normality(m0))
+print(check_homogeneity(m0))
+
+wilcox_test(Y ~ X, data=df) # Mann-Whitney U test
 
 
 

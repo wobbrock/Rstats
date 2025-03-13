@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### March 12, 2019
-### Updated: 1/17/2025
+### Updated: 3/12/2025
 ###
 
 ###
@@ -179,29 +179,29 @@ mosaicplot( ~ X + Y, data=df, main="Y by X", col=c("lightgreen","pink","lightyel
 # use the multinomial-Poisson trick
 m = glmer.mp(Y ~ X + (1|PId), data=df)
 Anova.mp(m, type=3)
-glmer.mp.con(m, pairwise ~ X, adjust="holm")
+glmer.mp.con(m, pairwise ~ X, adjust="holm", control=glmerControl(optimizer="bobyqa"))
 
 
 
 ##
 #### 5. Ordinal ####
 ##
-# df has one within-Ss. factor (X) w/levels (a,b,c) and ordinal response (1-7)
+# dt has one within-Ss. factor (X) w/levels (a,b,c) and ordinal response (1-7)
 set.seed(123)
-a = sample(1:7, 20, replace=TRUE, prob=c(0.10, 0.10, 0.20, 0.30, 0.40, 0.40, 0.20))
-b = sample(1:7, 20, replace=TRUE, prob=c(0.80, 0.70, 0.60, 0.30, 0.40, 0.20, 0.10))
-c = sample(1:7, 20, replace=TRUE, prob=c(0.00, 0.20, 0.10, 0.90, 0.80, 0.80, 0.70))
-df = data.frame(
+a = laply(round(rnorm(20, mean=4.15, sd=1.55), digits=0), function(x) min(max(x, 1), 7))
+b = laply(round(rnorm(20, mean=4.55, sd=1.65), digits=0), function(x) min(max(x, 1), 7))
+c = laply(round(rnorm(20, mean=3.20, sd=1.50), digits=0), function(x) min(max(x, 1), 7))
+dt = data.frame( # name table 'dt' to avoid Anova.clmm bug (see below)
   PId = factor(rep(1:20, times=3)),
   X = factor(rep(c("a","b","c"), each=20)),
   Y = c(a,b,c)
 )
-contrasts(df$X) <- "contr.sum"
-df <- df[order(df$PId),] # sort by PId
-row.names(df) <- 1:nrow(df) # restore row numbers
-View(df)
+contrasts(dt$X) <- "contr.sum"
+dt <- dt[order(dt$PId),] # sort by PId
+row.names(dt) <- 1:nrow(dt) # restore row numbers
+View(dt)
 
-ddply(df, ~ X, function(data) c(
+ddply(dt, ~ X, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -210,20 +210,20 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-mosaicplot( ~ X + Y, data=df, main="Y by X", col=terrain.colors(7))
+mosaicplot( ~ X + Y, data=dt, main="Y by X", col=terrain.colors(7))
 
-boxplot(Y ~ X, main="Y by X", data=df, col=c("pink","lightblue","lightgreen"))
+boxplot(Y ~ X, data=dt, main="Y by X", col=c("pink","lightblue","lightgreen"))
 
 par(mfrow=c(3,1))
-  hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="pink")
-  hist(df[df$X == "b",]$Y, main="Y by X=b", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="lightblue")
-  hist(df[df$X == "c",]$Y, main="Y by X=c", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="lightgreen")
+  hist(dt[dt$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="pink")
+  hist(dt[dt$X == "b",]$Y, main="Y by X=b", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="lightblue")
+  hist(dt[dt$X == "c",]$Y, main="Y by X=c", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="lightgreen")
 par(mfrow=c(1,1))
 
-df$Y = ordered(df$Y)
-df2 <- as.data.frame(df)
-m = clmm(Y ~ X + (1|PId), data=df2, Hess=TRUE, link="logit")
-# "logit", "probit", "cloglog", "loglog", "cauchit" links are valid
+dt$Y = ordered(dt$Y)
+# Anova.clmm fails if 'data' is named 'df'; we're using 'dt' instead
+m = clmm(Y ~ X + (1|PId), data=dt, Hess=TRUE, link="logit")
+# "logit", "probit", "cloglog", "loglog", and "cauchit" links are options
 Anova.clmm(m)
 emmeans(m, pairwise ~ X, adjust="holm")
 
@@ -715,32 +715,32 @@ mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=c("lightgreen","pink
 # use the multinomial-Poisson trick
 m = glmer.mp(Y ~ X1*X2 + (1|PId), data=df)
 Anova.mp(m, type=3)
-glmer.mp.con(m, pairwise ~ X1*X2, adjust="holm")
+glmer.mp.con(m, pairwise ~ X1*X2, adjust="holm", control=glmerControl(optimizer="bobyqa"))
 
 
 
 ##
 #### 16. Ordinal ####
 ##
-# df has two within-Ss. factors (X1,X2) each w/levels (a,b) and ordinal response (1-7)
+# dt has two within-Ss. factors (X1,X2) each w/levels (a,b) and ordinal response (1-7)
 set.seed(123)
-aa = sample(1:7, 15, replace=TRUE, prob=c(0.10, 0.10, 0.20, 0.30, 0.40, 0.30, 0.20))
-ab = sample(1:7, 15, replace=TRUE, prob=c(0.15, 0.10, 0.20, 0.20, 0.20, 0.30, 0.50))
-ba = sample(1:7, 15, replace=TRUE, prob=c(0.10, 0.20, 0.20, 0.20, 0.20, 0.10, 0.05))
-bb = sample(1:7, 15, replace=TRUE, prob=c(0.55, 0.60, 0.50, 0.50, 0.40, 0.35, 0.35))
-df = data.frame(
+aa = laply(round(rnorm(15, mean=5.25, sd=1.00), digits=0), function(x) min(max(x, 1), 7))
+ab = laply(round(rnorm(15, mean=4.15, sd=1.25), digits=0), function(x) min(max(x, 1), 7))
+ba = laply(round(rnorm(15, mean=2.95, sd=1.35), digits=0), function(x) min(max(x, 1), 7))
+bb = laply(round(rnorm(15, mean=3.35, sd=1.30), digits=0), function(x) min(max(x, 1), 7))
+dt = data.frame( # name table 'dt' to avoid Anova.clmm bug (see below)
   PId = factor(rep(1:15, times=4)),
   X1 = factor(rep(c("a","b"), each=30)),
   X2 = factor(rep(rep(c("a","b"), each=15), times=2)),
   Y = c(aa,ab,ba,bb)
 )
-contrasts(df$X1) <- "contr.sum"
-contrasts(df$X2) <- "contr.sum"
-df <- df[order(df$PId),] # sort by PId
-row.names(df) <- 1:nrow(df) # restore row numbers
-View(df)
+contrasts(dt$X1) <- "contr.sum"
+contrasts(dt$X2) <- "contr.sum"
+dt <- dt[order(dt$PId),] # sort by PId
+row.names(dt) <- 1:nrow(dt) # restore row numbers
+View(dt)
 
-ddply(df, ~ X1 + X2, function(data) c(
+ddply(dt, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -749,9 +749,9 @@ ddply(df, ~ X1 + X2, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=terrain.colors(7))
+mosaicplot( ~ X1 + X2 + Y, data=dt, main="Y by X1, X2", col=terrain.colors(7))
 
-with(df, 
+with(dt, 
      interaction.plot(
        X1, 
        X2, 
@@ -763,7 +763,7 @@ with(df,
        lwd=3, 
        col=c("red","blue"))
 )
-msd <- ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(dt, ~ X1 + X2, function(data) c(
   "Mean"=mean(data$Y), 
   "SD"=sd(data$Y)
 ))
@@ -774,16 +774,16 @@ arrows(x0=2-dx, y0=msd[3,]$Mean - msd[3,]$SD, x1=2-dx, y1=msd[3,]$Mean + msd[3,]
 arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
 
 par(mfrow=c(4,1))
-  hist(df[df$X1 == "a" & df$X2 == "a",]$Y, main="Y by (a,a)", xlab="Y", xlim=c(1,7), ylim=c(0,7), breaks=seq(1,7,1), col="pink")
-  hist(df[df$X1 == "a" & df$X2 == "b",]$Y, main="Y by (a,b)", xlab="Y", xlim=c(1,7), ylim=c(0,7), breaks=seq(1,7,1), col="red")
-  hist(df[df$X1 == "b" & df$X2 == "a",]$Y, main="Y by (b,a)", xlab="Y", xlim=c(1,7), ylim=c(0,7), breaks=seq(1,7,1), col="lightblue")
-  hist(df[df$X1 == "b" & df$X2 == "b",]$Y, main="Y by (b,b)", xlab="Y", xlim=c(1,7), ylim=c(0,7), breaks=seq(1,7,1), col="blue")
+  hist(dt[dt$X1 == "a" & dt$X2 == "a",]$Y, main="Y by (a,a)", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="pink")
+  hist(dt[dt$X1 == "a" & dt$X2 == "b",]$Y, main="Y by (a,b)", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="red")
+  hist(dt[dt$X1 == "b" & dt$X2 == "a",]$Y, main="Y by (b,a)", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="lightblue")
+  hist(dt[dt$X1 == "b" & dt$X2 == "b",]$Y, main="Y by (b,b)", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="blue")
 par(mfrow=c(1,1))
 
-df$Y = ordered(df$Y)
-df2 <- as.data.frame(df)
-m = clmm(Y ~ X1*X2 + (1|PId), data=df2, Hess=TRUE, link="cloglog")
-# "logit", "probit", "cloglog", "loglog", "cauchit" links are valid
+dt$Y = ordered(dt$Y)
+# Anova.clmm fails if 'data' is named 'df'; we're using 'dt' instead
+m = clmm(Y ~ X1*X2 + (1|PId), data=dt, Hess=TRUE, link="logit", control=clmm.control(method="ucminf"))
+# "logit", "probit", "cloglog", "loglog", and "cauchit" links are options
 Anova.clmm(m)
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
 

@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### August 2, 2023
-### Updated: 2/08/2025
+### Updated: 3/12/2025
 ###
 
 ###
@@ -210,9 +210,9 @@ par(mfrow=c(1,1))
 gofstat(fa)
 gofstat(fb)
 
-# if var/mean > 1.15, we have overdispersion; if so, use quasipoisson or an nbinom GL(M)M
-abs(var(df[df$X == "a",]$Y) / mean(df[df$X == "a",]$Y)) > 1.15
-abs(var(df[df$X == "b",]$Y) / mean(df[df$X == "b",]$Y)) > 1.15
+# if var/|mean| > 1.15, we have overdispersion; use quasipoisson or an nbinom GL(M)M
+var(df[df$X == "a",]$Y) / abs(mean(df[df$X == "a",]$Y)) > 1.15
+var(df[df$X == "b",]$Y) / abs(mean(df[df$X == "b",]$Y)) > 1.15
 
 # another way to check for overdispersion
 m = glm(Y ~ X, data=df, family=poisson)
@@ -285,9 +285,9 @@ par(mfrow=c(1,1))
 gofstat(fa)
 gofstat(fb)
 
-# if var/mean > 1.15, we have overdispersion; if so, use quasipoisson or a nbinom GLM
-abs(var(df[df$X == "a",]$Y) / mean(df[df$X == "a",]$Y)) > 1.15
-abs(var(df[df$X == "b",]$Y) / mean(df[df$X == "b",]$Y)) > 1.15
+# if var/|mean| > 1.15, we have overdispersion; use quasipoisson or a nbinom GLM
+var(df[df$X == "a",]$Y) / abs(mean(df[df$X == "a",]$Y)) > 1.15
+var(df[df$X == "b",]$Y) / abs(mean(df[df$X == "b",]$Y)) > 1.15
 
 # another way to check for overdispersion
 m = glm(Y ~ X, data=df, family=poisson)

@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### November 14, 2018
-### Updated: 2/03/2025
+### Updated: 3/12/2025
 ###
 
 ###
@@ -125,7 +125,7 @@ chisq.test(xt) # omnibus test
 
 ## Post hoc tests
 chisq.multcomp(xt, p.method="holm") # xt shows levels
-# to get the chi-Squared statistics, use qchisq(1-p, df=1),
+# to get the chi-squared statistics, use qchisq(1-p, df=1),
 # where p is the uncorrected (p.method="none“) pairwise p-value:
 qchisq(1 - 0.0038, df=1) # 8.376996
 
@@ -232,19 +232,19 @@ b = G.test(xt[2,]) # b
 p.adjust(c(a$p.value, b$p.value), method="holm")
 
 # or, test each column against expected frequencies
-exp = G.test(xt)$expected[,1] # expected 'yes'
-y = G.test(xt[,1], p=exp/sum(exp))
-exp = G.test(xt)$expected[,2] # expected 'no'
-n = G.test(xt[,2], p=exp/sum(exp))
-exp = G.test(xt)$expected[,3] # expected 'maybe'
-m = G.test(xt[,3], p=exp/sum(exp))
+ex = G.test(xt)$expected[,1] # expected 'yes'
+y = G.test(xt[,1], p=ex/sum(ex))
+ex = G.test(xt)$expected[,2] # expected 'no'
+n = G.test(xt[,2], p=ex/sum(ex))
+ex = G.test(xt)$expected[,3] # expected 'maybe'
+m = G.test(xt[,3], p=ex/sum(ex))
 p.adjust(c(y$p.value, n$p.value, m$p.value), method="holm")
 
 # or, test each row against expected frequencies
-exp = G.test(xt)$expected[1,] # expected 'a'
-a = G.test(xt[1,], p=exp/sum(exp))
-exp = G.test(xt)$expected[2,] # expected 'b'
-b = G.test(xt[2,], p=exp/sum(exp))
+ex = G.test(xt)$expected[1,] # expected 'a'
+a = G.test(xt[1,], p=ex/sum(ex))
+ex = G.test(xt)$expected[2,] # expected 'b'
+b = G.test(xt[2,], p=ex/sum(ex))
 p.adjust(c(a$p.value, b$p.value), method="holm")
 
 
@@ -290,7 +290,7 @@ qchisq(1 - 4.5e-05, df=1) # 16.6479
 
 # or, compare cells to expected frequencies using standardized residuals
 chisq.posthoc.test(xt, method="holm")
-# to get the chi-Squared statistics, use qchisq(1-p, df=1),
+# to get the chi-squared statistics, use qchisq(1-p, df=1),
 # where p is the uncorrected (p.method="none“) p-value:
 qchisq(1 - 0.004311, df=1) # 8.147944
 
@@ -306,19 +306,19 @@ b = chisq.test(xt[2,]) # b
 p.adjust(c(a$p.value, b$p.value), method="holm")
 
 # or, test each column against expected frequencies
-exp = chisq.test(xt)$expected[,1]
-y = chisq.test(xt[,1], p=exp/sum(exp))
-exp = chisq.test(xt)$expected[,2]
-n = chisq.test(xt[,2], p=exp/sum(exp))
-exp = chisq.test(xt)$expected[,3]
-m = chisq.test(xt[,3], p=exp/sum(exp))
+ex = chisq.test(xt)$expected[,1]
+y = chisq.test(xt[,1], p=ex/sum(ex))
+ex = chisq.test(xt)$expected[,2]
+n = chisq.test(xt[,2], p=ex/sum(ex))
+ex = chisq.test(xt)$expected[,3]
+m = chisq.test(xt[,3], p=ex/sum(ex))
 p.adjust(c(y$p.value, n$p.value, m$p.value), method="holm")
 
 # or, test each row against expected frequencies
-exp = chisq.test(xt)$expected[1,] # expected 'a'
-a = chisq.test(xt[1,], p=exp/sum(exp))
-exp = chisq.test(xt)$expected[2,] # expected 'b'
-b = chisq.test(xt[2,], p=exp/sum(exp))
+ex = chisq.test(xt)$expected[1,] # expected 'a'
+a = chisq.test(xt[1,], p=ex/sum(ex))
+ex = chisq.test(xt)$expected[2,] # expected 'b'
+b = chisq.test(xt[2,], p=ex/sum(ex))
 p.adjust(c(a$p.value, b$p.value), method="holm")
 
 
@@ -360,23 +360,36 @@ symmetry_test(Y ~ X | PId, data=df) # omnibus test
 
 ## Post hoc tests
 
-# If we want to compare two seasons, we can subset the table and do pairwise symmetry tests.
+# If we want to compare two seasons, we have dependent counts, because each
+# respondent chose a flavor in each season.
 # Define a function for convenience:
 pairwise.symmetry.test <- function(s1, s2, data=df) {
   df2 <- df[df$X == s1 | df$X == s2,] # table subset
   df2$X = factor(df2$X) # update factor levels
   return (pvalue(symmetry_test(Y ~ X | PId, data=df2)))
 }
-fa.wi = pairwise.symmetry.test("fall","winter", data=df)
-fa.sp = pairwise.symmetry.test("fall","spring", data=df)
-fa.su = pairwise.symmetry.test("fall","summer", data=df)
-wi.sp = pairwise.symmetry.test("winter","spring", data=df)
-wi.su = pairwise.symmetry.test("winter","summer", data=df)
-sp.su = pairwise.symmetry.test("spring","summer", data=df)
+fa.wi = pairwise.symmetry.test("fall", "winter", data=df)
+fa.sp = pairwise.symmetry.test("fall", "spring", data=df)
+fa.su = pairwise.symmetry.test("fall", "summer", data=df)
+wi.sp = pairwise.symmetry.test("winter", "spring", data=df)
+wi.su = pairwise.symmetry.test("winter", "summer", data=df)
+sp.su = pairwise.symmetry.test("spring", "summer", data=df)
 p.adjust(c(fa.wi, fa.sp, fa.su, wi.sp, wi.su, sp.su), method="holm")
 
+# Sneak peek: Use a GLMM to conduct the omnibus test and pairwise comparisons.
+# The results are quite similar to those from the omnibus and pairwise symmetry
+# tests. See analysis #4 in GLMM.R for a similar case:
+library(multpois)
+library(lme4)
+library(lmerTest)
+m = glmer.mp(Y ~ X + (1|PId), data=df, control=glmerControl(optimizer="bobyqa"))
+Anova.mp(m, type=3)
+glmer.mp.con(m, pairwise ~ X, adjust="holm", control=glmerControl(optimizer="bobyqa"))
 
-# Counts within single seasons (across flavors) are independent, so we can use a one-sample test.
+
+# Counts within single seasons (across flavors) are independent, because
+# each respondent picked only one flavor per season.
+# We can use a one-sample test:
 fa = xmulti(xt[1,], rep(1/length(xt[1,]), length(xt[1,])), statName="Prob") # fall
 wi = xmulti(xt[2,], rep(1/length(xt[2,]), length(xt[2,])), statName="Prob") # winter
 sp = xmulti(xt[3,], rep(1/length(xt[3,]), length(xt[3,])), statName="Prob") # spring
@@ -384,7 +397,8 @@ su = xmulti(xt[4,], rep(1/length(xt[4,]), length(xt[4,])), statName="Prob") # su
 p.adjust(c(fa$pProb, wi$pProb, sp$pProb, su$pProb), method="holm")
 
 
-# Counts within single flavors (across seasons) are dependent, so we can use sign tests.
+# Counts within single flavors (across seasons) are dependent because the 
+# same respondent could have chosen the same flavor in multiple seasons.
 # Define a function for convenience:
 pairwise.sign.test <- function(flavor, s1, s2, data=df) {
   df$chose.flavor.in.s1 = ifelse(df$Y == flavor & df$X == s1, 1, 0)
@@ -397,6 +411,22 @@ fa.su = pairwise.sign.test("vanilla", "fall", "summer", data=df)
 wi.sp = pairwise.sign.test("vanilla", "winter", "spring", data=df)
 wi.su = pairwise.sign.test("vanilla", "winter", "summer", data=df)
 sp.su = pairwise.sign.test("vanilla", "spring", "summer", data=df)
+p.adjust(c(fa.wi, fa.sp, fa.su, wi.sp, wi.su, sp.su), method="holm")
+
+fa.wi = pairwise.sign.test("chocolate", "fall", "winter", data=df)
+fa.sp = pairwise.sign.test("chocolate", "fall", "spring", data=df)
+fa.su = pairwise.sign.test("chocolate", "fall", "summer", data=df)
+wi.sp = pairwise.sign.test("chocolate", "winter", "spring", data=df)
+wi.su = pairwise.sign.test("chocolate", "winter", "summer", data=df)
+sp.su = pairwise.sign.test("chocolate", "spring", "summer", data=df)
+p.adjust(c(fa.wi, fa.sp, fa.su, wi.sp, wi.su, sp.su), method="holm")
+
+fa.wi = pairwise.sign.test("strawberry", "fall", "winter", data=df)
+fa.sp = pairwise.sign.test("strawberry", "fall", "spring", data=df)
+fa.su = pairwise.sign.test("strawberry", "fall", "summer", data=df)
+wi.sp = pairwise.sign.test("strawberry", "winter", "spring", data=df)
+wi.su = pairwise.sign.test("strawberry", "winter", "summer", data=df)
+sp.su = pairwise.sign.test("strawberry", "spring", "summer", data=df)
 p.adjust(c(fa.wi, fa.sp, fa.su, wi.sp, wi.su, sp.su), method="holm")
 
 
