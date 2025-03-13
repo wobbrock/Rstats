@@ -1,11 +1,11 @@
 ###
-### Statistical Analysis and Reporting in R
+### Statistical Inference in R
 ### Jacob O. Wobbrock, Ph.D.
 ### wobbrock@uw.edu
 ### The Information School
 ### University of Washington
 ### November 13, 2019
-### Updated: 2/08/2025
+### Updated: 3/13/2025
 ###
 
 ###
@@ -197,18 +197,17 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-with(df, 
-     interaction.plot(
-       X1, 
-       X2, 
-       Y, 
-       ylim=c(min(Y), max(Y)), 
-       ylab="Y",
-       main="Y by X1, X2",
-       lty=1, 
-       lwd=3, 
-       col=c("red","blue"))
-)
+with(df, interaction.plot(
+  X1, 
+  X2, 
+  Y, 
+  ylim=c(min(Y), max(Y)), 
+  ylab="Y",
+  main="Y by X1, X2",
+  lty=1, 
+  lwd=3, 
+  col=c("red","blue")
+))
 msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Mean"=mean(data$Y), 
   "SD"=sd(data$Y)
@@ -250,18 +249,17 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-with(df, 
-     interaction.plot(
-       X1, 
-       X2, 
-       Y, 
-       ylim=c(min(Y), max(Y)), 
-       ylab="Y",
-       main="Y by X1, X2",
-       lty=1, 
-       lwd=3, 
-       col=c("red","blue"))
-)
+with(df, interaction.plot(
+  X1, 
+  X2, 
+  Y, 
+  ylim=c(min(Y), max(Y)), 
+  ylab="Y",
+  main="Y by X1, X2",
+  lty=1, 
+  lwd=3, 
+  col=c("red","blue")
+))
 msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Mean"=mean(data$Y), 
   "SD"=sd(data$Y)
@@ -310,18 +308,17 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-with(df, 
-     interaction.plot(
-       X1, 
-       X2, 
-       Y, 
-       ylim=c(min(Y), max(Y)), 
-       ylab="Y",
-       main="Y by X1, X2",
-       lty=1, 
-       lwd=3, 
-       col=c("red","blue"))
-)
+with(df, interaction.plot(
+  X1, 
+  X2, 
+  Y, 
+  ylim=c(min(Y), max(Y)), 
+  ylab="Y",
+  main="Y by X1, X2",
+  lty=1, 
+  lwd=3, 
+  col=c("red","blue")
+))
 msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Mean"=mean(data$Y), 
   "SD"=sd(data$Y)
@@ -365,18 +362,17 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-with(df, 
-     interaction.plot(
-       X1, 
-       X2, 
-       Y, 
-       ylim=c(min(Y), max(Y)), 
-       ylab="Y",
-       main="Y by X1, X2",
-       lty=1, 
-       lwd=3, 
-       col=c("red","blue"))
-)
+with(df, interaction.plot(
+  X1, 
+  X2, 
+  Y, 
+  ylim=c(min(Y), max(Y)), 
+  ylab="Y",
+  main="Y by X1, X2",
+  lty=1, 
+  lwd=3, 
+  col=c("red","blue")
+))
 msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Mean"=mean(data$Y), 
   "SD"=sd(data$Y)

@@ -1,11 +1,11 @@
 ###
-### Statistical Analysis and Reporting in R
+### Statistical Inference in R
 ### Jacob O. Wobbrock, Ph.D.
 ### wobbrock@uw.edu
 ### The Information School
 ### University of Washington
 ### August 2, 2023
-### Updated: 3/12/2025
+### Updated: 3/13/2025
 ###
 
 ###

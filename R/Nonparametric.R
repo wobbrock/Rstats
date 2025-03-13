@@ -1,11 +1,11 @@
 ###
-### Statistical Analysis and Reporting in R
+### Statistical Inference in R
 ### Jacob O. Wobbrock, Ph.D.
 ### wobbrock@uw.edu
 ### The Information School
 ### University of Washington
 ### November 26, 2018
-### Updated: 3/12/2025
+### Updated: 3/13/2025
 ###
 
 ###
@@ -310,18 +310,17 @@ ddply(df, ~ X1 + X2, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-with(df, 
-     interaction.plot(
-       X1, 
-       X2, 
-       Y, 
-       ylim=c(min(Y), max(Y)), 
-       ylab="Y",
-       main="Y by X1, X2",
-       lty=1, 
-       lwd=3, 
-       col=c("red","blue"))
-)
+with(df, interaction.plot(
+  X1, 
+  X2, 
+  Y, 
+  ylim=c(min(Y), max(Y)), 
+  ylab="Y",
+  main="Y by X1, X2",
+  lty=1, 
+  lwd=3, 
+  col=c("red","blue")
+))
 msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Mean"=mean(data$Y), 
   "SD"=sd(data$Y)
@@ -385,18 +384,17 @@ ddply(df, ~ X1 + X2, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-with(df, 
-     interaction.plot(
-       X1, 
-       X2, 
-       Y, 
-       ylim=c(min(Y), max(Y)), 
-       ylab="Y",
-       main="Y by X1, X2",
-       lty=1, 
-       lwd=3, 
-       col=c("red","blue"))
-)
+with(df, interaction.plot(
+  X1, 
+  X2, 
+  Y, 
+  ylim=c(min(Y), max(Y)), 
+  ylab="Y",
+  main="Y by X1, X2",
+  lty=1, 
+  lwd=3, 
+  col=c("red","blue")
+))
 msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Mean"=mean(data$Y), 
   "SD"=sd(data$Y)
