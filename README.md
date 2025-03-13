@@ -1,5 +1,5 @@
 # \#Rstats
-Statistical Inference in R
+*Statistical Inference in R*
 
 R code recipes for inferential statistical analysis of experiments and surveys.
 
