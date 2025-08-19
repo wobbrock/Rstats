@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### November 26, 2018
-### Updated: 3/13/2025
+### Updated: 8/18/2025
 ###
 
 ###
@@ -64,8 +64,8 @@ barplot(c(
 )
 
 m0 = lm(Y ~ X, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 median_test(Y ~ X, data=df)
 
@@ -104,8 +104,8 @@ barplot(c(
 )
 
 m0 = lmer(Y ~ X + (1|PId), data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 sign_test(Y ~ X | PId, data=df)
 
@@ -138,8 +138,8 @@ ddply(df, ~ X, function(data) c(
 plot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue"))
 
 m0 = lm(Y ~ X, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 wilcox_test(Y ~ X, data=df) # Mann-Whitney U test
 
@@ -174,8 +174,8 @@ ddply(df, ~ X, function(data) c(
 plot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue"))
 
 m0 = lmer(Y ~ X + (1|PId), data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 wilcoxsign_test(Y ~ X | PId, data=df, distribution="exact") # Wilcoxon signed-rank test
 
@@ -213,8 +213,8 @@ ddply(df, ~ X, function(data) c(
 plot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
 
 m0 = lm(Y ~ X, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 kruskal_test(Y ~ X, data=df, distribution="asymptotic") # Kruskal-Wallis test
 
@@ -224,9 +224,9 @@ ac = wilcox.test(df[df$X == "a",]$Y, df[df$X == "c",]$Y, exact=FALSE) # a vs. c
 bc = wilcox.test(df[df$X == "b",]$Y, df[df$X == "c",]$Y, exact=FALSE) # b vs. c
 p.adjust(c(ab$p.value, ac$p.value, bc$p.value), method="holm") # p-values
 
-wilcoxonZ(df[df$X == "a",]$Y, df[df$X == "b",]$Y) # Z-scores
-wilcoxonZ(df[df$X == "a",]$Y, df[df$X == "c",]$Y)
-wilcoxonZ(df[df$X == "b",]$Y, df[df$X == "c",]$Y)
+wilcoxonZ(df[df$X == "a",]$Y, df[df$X == "b",]$Y) # Z-score
+wilcoxonZ(df[df$X == "a",]$Y, df[df$X == "c",]$Y) # Z-score
+wilcoxonZ(df[df$X == "b",]$Y, df[df$X == "c",]$Y) # Z-score
 
 
 
@@ -260,8 +260,8 @@ ddply(df, ~ X, function(data) c(
 plot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
 
 m0 = lmer(Y ~ X + (1|PId), data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 friedman_test(Y ~ X | PId, data=df, distribution="asymptotic")
 
@@ -272,9 +272,9 @@ ac = wilcox.test(df2$a, df2$c, paired=TRUE, exact=FALSE) # a vs. c
 bc = wilcox.test(df2$b, df2$c, paired=TRUE, exact=FALSE) # b vs. c
 p.adjust(c(ab$p.value, ac$p.value, bc$p.value), method="holm") # p-values
 
-wilcoxonZ(df2$a, df2$b, paired=TRUE) # Z-scores
-wilcoxonZ(df2$a, df2$c, paired=TRUE)
-wilcoxonZ(df2$b, df2$c, paired=TRUE)
+wilcoxonZ(df2$a, df2$b, paired=TRUE) # Z-score
+wilcoxonZ(df2$a, df2$c, paired=TRUE) # Z-score
+wilcoxonZ(df2$b, df2$c, paired=TRUE) # Z-score
 
 
 
@@ -301,7 +301,7 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -309,21 +309,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -332,8 +329,8 @@ arrows(x0=2-dx, y0=msd[3,]$Mean - msd[3,]$SD, x1=2-dx, y1=msd[3,]$Mean + msd[3,]
 arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
 
 m0 = lm(Y ~ X1*X2, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = art(Y ~ X1*X2, data=df)
 anova(m)
@@ -375,7 +372,7 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -383,21 +380,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -406,7 +400,7 @@ arrows(x0=2-dx, y0=msd[3,]$Mean - msd[3,]$SD, x1=2-dx, y1=msd[3,]$Mean + msd[3,]
 arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
 
 m0 = lmer(Y ~ X1*X2 + (1|PId), data=df)
-print(check_normality(m0))
+check_normality(m0)
 # no need with an LMM to check for sphericity!
 
 m = art(Y ~ X1*X2 + (1|PId), data=df) # PId is a random factor

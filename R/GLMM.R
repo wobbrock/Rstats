@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### March 12, 2019
-### Updated: 3/13/2025
+### Updated: 8/18/2025
 ###
 
 ###
@@ -17,11 +17,12 @@ library(plyr) # for ddply
 library(lme4) # for lmer, glmer, glmer.nb
 library(lmerTest)
 library(car) # for Anova
-library(emmeans) # for emmeans
+library(effectsize) # for eta_squared
+library(emmeans) # for emmeans, eff_size
+library(performance) # for check_*
 library(multpois) # for glmer.mp, Anova.mp, glmer.mp.con
 library(ordinal) # for clmm
 library(RVAideMemoire) # for Anova.clmm
-library(performance) # for check_*
 library(glmmTMB) # for glmmTMB
 
 
@@ -65,10 +66,14 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m = lmer(Y ~ X + (1|PId), data=df)
-print(check_normality(m))
-print(check_homogeneity(m))
+check_normality(m)
+check_homogeneity(m)
+
 Anova(m, type=3, test.statistic="F")
-emmeans(m, pairwise ~ X, adjust="holm")
+eta_squared(m, partial=TRUE)
+
+emm = emmeans(m, pairwise ~ X, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m), edf=df.residual(m))
 
 
 
@@ -108,14 +113,18 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = lmer(Y ~ X + (1|PId), data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = lmer(log(Y) ~ X + (1|PId), data=df)
-print(check_normality(m))
-print(check_homogeneity(m))
+check_normality(m)
+check_homogeneity(m)
+
 Anova(m, type=3, test.statistic="F")
-emmeans(m, pairwise ~ X, adjust="holm")
+eta_squared(m, partial=TRUE)
+
+emm = emmeans(m, pairwise ~ X, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m), edf=df.residual(m))
 
 
 
@@ -155,9 +164,9 @@ emmeans(m, pairwise ~ X, adjust="holm")
 ##
 # df has one within-Ss. factor (X) w/levels (a,b,c) and polytomous response (Y)
 set.seed(123)
-a = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.4, 0.5, 0.1))
-b = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.5, 0.3, 0.2))
-c = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.3, 0.2, 0.5))
+a = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.5, 0.3, 0.2))
+b = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.2, 0.2, 0.6))
+c = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.3, 0.5, 0.2))
 df = data.frame(
   PId = factor(rep(1:20, times=3)),
   X = factor(rep(c("a","b","c"), each=20)),
@@ -177,9 +186,24 @@ ddply(df, ~ X, function(data) c(
 mosaicplot( ~ X + Y, data=df, main="Y by X", col=c("lightgreen","pink","lightyellow"))
 
 # use the multinomial-Poisson trick
-m = glmer.mp(Y ~ X + (1|PId), data=df)
+m0 = glmer.mp(Y ~ X + (1|PId), data=df)
+Anova.mp(m0, type=3)
+glmer.mp.con(m0, pairwise ~ X, adjust="holm")
+
+# if either glmer.mp or glmer.mp.con fails to converge, change 
+# the optimizer. see the Note for ?glmer.mp or ?glmer.mp.con.
+m = glmer.mp(
+  Y ~ X + (1|PId), 
+  data = df, 
+  control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=1e+05))
+)
 Anova.mp(m, type=3)
-glmer.mp.con(m, pairwise ~ X, adjust="holm", control=glmerControl(optimizer="bobyqa"))
+glmer.mp.con(
+  m, 
+  pairwise ~ X, 
+  adjust = "holm", 
+  control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=1e+05))
+)
 
 
 
@@ -210,6 +234,7 @@ ddply(dt, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
+
 mosaicplot( ~ X + Y, data=dt, main="Y by X", col=terrain.colors(7))
 
 boxplot(Y ~ X, data=dt, main="Y by X", col=c("pink","lightblue","lightgreen"))
@@ -220,10 +245,10 @@ par(mfrow=c(3,1))
   hist(dt[dt$X == "c",]$Y, main="Y by X=c", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="lightgreen")
 par(mfrow=c(1,1))
 
-dt$Y = ordered(dt$Y)
+dt$Y = ordered(dt$Y, levels=seq(1,7,1))
 # Anova.clmm fails if 'data' is named 'df'; we're using 'dt' instead
-m = clmm(Y ~ X + (1|PId), data=dt, Hess=TRUE, link="logit")
 # "logit", "probit", "cloglog", "loglog", and "cauchit" links are options
+m = clmm(Y ~ X + (1|PId), data=dt, Hess=TRUE, link="logit")
 Anova.clmm(m)
 emmeans(m, pairwise ~ X, adjust="holm")
 
@@ -265,7 +290,8 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m = glmer(Y ~ X + (1|PId), data=df, family=poisson)
-print(check_overdispersion(m))
+check_overdispersion(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X, adjust="holm")
 
@@ -312,7 +338,7 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = glmer(Y ~ X + (1|PId), data=df, family=poisson)
-print(check_zeroinflation(m0))
+check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X + (1|PId), data=df, family=poisson, ziformula=~1, REML=TRUE)
 Anova(m, type=3)
@@ -356,10 +382,11 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = glmer(Y ~ X + (1|PId), data=df, family=poisson)
-print(check_overdispersion(m0))
+check_overdispersion(m0)
 
 m = glmer.nb(Y ~ X + (1|PId), data=df)
-print(check_overdispersion(m))
+check_overdispersion(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X, adjust="holm")
 
@@ -406,10 +433,10 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = glmer(Y ~ X + (1|PId), data=df, family=poisson)
-print(check_overdispersion(m0))
+check_overdispersion(m0)
 
 m0 = glmer.nb(Y ~ X + (1|PId), data=df)
-print(check_zeroinflation(m0))
+check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X + (1|PId), data=df, family=nbinom2, ziformula=~1, REML=TRUE)
 Anova(m, type=3)
@@ -453,8 +480,8 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = lmer(Y ~ X + (1|PId), data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = glmer(Y ~ X + (1|PId), data=df, family=Gamma(link="log"))
 Anova(m, type=3)
@@ -498,8 +525,8 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = lmer(Y ~ X + (1|PId), data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = glmer(Y ~ X + (1|PId), data=df, family=Gamma)
 Anova(m, type=3)
@@ -532,7 +559,7 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -540,21 +567,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -570,10 +594,14 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m = lmer(Y ~ X1*X2 + (1|PId), data=df)
-print(check_normality(m))
-print(check_homogeneity(m))
+check_normality(m)
+check_homogeneity(m)
+
 Anova(m, type=3, test.statistic="F")
-emmeans(m, pairwise ~ X1*X2, adjust="holm")
+eta_squared(m, partial=TRUE)
+
+emm = emmeans(m, pairwise ~ X1*X2, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m), edf=df.residual(m))
 
 
 
@@ -598,7 +626,7 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -606,21 +634,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -636,14 +661,18 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = lmer(Y ~ X1*X2 + (1|PId), data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = lmer(log(Y) ~ X1*X2 + (1|PId), data=df)
-print(check_normality(m))
-print(check_homogeneity(m))
+check_normality(m)
+check_homogeneity(m)
+
 Anova(m, type=3, test.statistic="F")
-emmeans(m, pairwise ~ X1*X2, adjust="holm")
+eta_squared(m, partial=TRUE)
+
+emm = emmeans(m, pairwise ~ X1*X2, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m), edf=df.residual(m))
 
 
 
@@ -711,9 +740,24 @@ ddply(df, ~ X1 + X2, function(data) c(
 mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=c("lightgreen","pink","lightyellow"))
 
 # use the multinomial-Poisson trick
-m = glmer.mp(Y ~ X1*X2 + (1|PId), data=df)
+m0 = glmer.mp(Y ~ X1*X2 + (1|PId), data=df)
+Anova.mp(m0, type=3)
+glmer.mp.con(m0, pairwise ~ X1*X2, adjust="holm")
+
+# if either glmer.mp or glmer.mp.con fails to converge, change 
+# the optimizer. see the Note for ?glmer.mp or ?glmer.mp.con.
+m = glmer.mp(
+  Y ~ X1*X2 + (1|PId), 
+  data = df, 
+  control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=1e+05))
+)
 Anova.mp(m, type=3)
-glmer.mp.con(m, pairwise ~ X1*X2, adjust="holm", control=glmerControl(optimizer="bobyqa"))
+glmer.mp.con(
+  m, 
+  pairwise ~ X1*X2, 
+  adjust = "holm", 
+  control = glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=1e+05))
+)
 
 
 
@@ -738,7 +782,7 @@ dt <- dt[order(dt$PId),] # sort by PId
 row.names(dt) <- 1:nrow(dt) # restore row numbers
 View(dt)
 
-ddply(dt, ~ X1 + X2, function(data) c(
+msd <- ddply(dt, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -746,23 +790,20 @@ ddply(dt, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 mosaicplot( ~ X1 + X2 + Y, data=dt, main="Y by X1, X2", col=terrain.colors(7))
 
 with(dt, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(dt, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -777,10 +818,10 @@ par(mfrow=c(4,1))
   hist(dt[dt$X1 == "b" & dt$X2 == "b",]$Y, main="Y by (b,b)", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="blue")
 par(mfrow=c(1,1))
 
-dt$Y = ordered(dt$Y)
+dt$Y = ordered(dt$Y, levels=seq(1,7,1))
 # Anova.clmm fails if 'data' is named 'df'; we're using 'dt' instead
-m = clmm(Y ~ X1*X2 + (1|PId), data=dt, Hess=TRUE, link="logit", control=clmm.control(method="ucminf"))
 # "logit", "probit", "cloglog", "loglog", and "cauchit" links are options
+m = clmm(Y ~ X1*X2 + (1|PId), data=dt, Hess=TRUE, link="logit", control=clmm.control(method="ucminf"))
 Anova.clmm(m)
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
 
@@ -807,7 +848,7 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -815,21 +856,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -845,7 +883,8 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m = glmer(Y ~ X1*X2 + (1|PId), data=df, family=poisson)
-print(check_overdispersion(m))
+check_overdispersion(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
 
@@ -878,7 +917,7 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -886,21 +925,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -916,7 +952,7 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = glmer(Y ~ X1*X2 + (1|PId), data=df, family=poisson)
-print(check_zeroinflation(m0))
+check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X1*X2 + (1|PId), data=df, family=poisson, ziformula=~1, REML=TRUE)
 Anova(m, type=3)
@@ -945,7 +981,7 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -953,21 +989,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -983,10 +1016,11 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = glmer(Y ~ X1*X2 + (1|PId), data=df, family=poisson)
-print(check_overdispersion(m0))
+check_overdispersion(m0)
 
 m = glmer.nb(Y ~ X1*X2 + (1|PId), data=df)
-print(check_overdispersion(m))
+check_overdispersion(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
 
@@ -1019,7 +1053,7 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -1027,21 +1061,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -1057,10 +1088,10 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = glmer(Y ~ X1*X2 + (1|PId), data=df, family=poisson)
-print(check_overdispersion(m0))
+check_overdispersion(m0)
 
 m0 = glmer.nb(Y ~ X1*X2 + (1|PId), data=df)
-print(check_zeroinflation(m0))
+check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X1*X2 + (1|PId), data=df, family=nbinom2, ziformula=~1, REML=TRUE)
 Anova(m, type=3)
@@ -1089,7 +1120,7 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -1097,21 +1128,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -1127,8 +1155,8 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = lmer(Y ~ X1*X2 + (1|PId), data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = glmer(Y ~ X1*X2 + (1|PId), data=df, family=Gamma(link="log"))
 Anova(m, type=3)
@@ -1157,7 +1185,7 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -1165,21 +1193,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -1195,8 +1220,8 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = lmer(Y ~ X1*X2 + (1|PId), data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = glmer(Y ~ X1*X2 + (1|PId), data=df, family=Gamma, nAGQ=0)
 Anova(m, type=3)

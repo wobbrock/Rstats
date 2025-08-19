@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### November 13, 2019
-### Updated: 3/13/2025
+### Updated: 8/18/2025
 ###
 
 ###
@@ -17,10 +17,11 @@ library(plyr) # for ddply
 library(car) # for leveneTest
 library(reshape2) # for dcast
 library(afex) # for aov_ez
-library(performance) # for check_homogeneity, check_sphericity
+library(performance) # for check_*
 library(lme4) # for lmer
 library(lmerTest)
-library(emmeans) # for emmeans
+library(effectsize) # for cohens_d, eta_squared
+library(emmeans) # for emmeans, eff_size
 
 
 ###
@@ -56,7 +57,10 @@ plot(Y ~ X, data=df, main="Y by X")
 leveneTest(Y ~ X, data=df, center=mean) # check homogeneity of variance
 
 t.test(Y ~ X, data=df, var.equal=TRUE)  # if p≥.05, no violation of homogeneity
+cohens_d(Y ~ X, data=df, pooled_sd=TRUE)
+
 t.test(Y ~ X, data=df, var.equal=FALSE) # if p<.05, Welch t-test
+cohens_d(Y ~ X, data=df, pooled_sd=FALSE)
 
 
 
@@ -90,6 +94,7 @@ plot(Y ~ X, data=df, main="Y by X")
 
 df2 <- dcast(df, PId ~ X, value.var="Y") # make wide-format table
 t.test(df2$a, df2$b, paired=TRUE)        # neither homogeneity nor sphericity applies to a paired t-test
+cohens_d(df2$a, df2$b, paired=TRUE)
 
 
 
@@ -122,14 +127,18 @@ plot(Y ~ X, data=df, main="Y by X")
 
 m = aov_ez(dv="Y", between="X", id="PId", type=3, data=df)
 leveneTest(Y ~ X, data=df, center=mean) # same
-print(check_homogeneity(m)) # Levene's test
+check_homogeneity(m) # Levene's test
 
 anova(m) # use if p≥.05, no violation of homoscedasticity, else use...
-oneway.test(Y ~ X, data=df, var.equal=FALSE)  # Welch ANOVA
-Anova(m$lm, type=3, white.adjust=TRUE)        # White-adjusted ANOVA
+
+oneway.test(Y ~ X, data=df, var.equal=FALSE) # Welch ANOVA
+
+Anova(m$lm, type=3, white.adjust=TRUE)       # White-adjusted ANOVA
+eta_squared(m$lm, generalized=TRUE)
 
 ## post hoc pairwise comparisons
-emmeans(m, pairwise ~ X, adjust="holm")
+emm = emmeans(m, pairwise ~ X, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m$lm), edf=df.residual(m$lm))
 
 
 
@@ -164,13 +173,16 @@ plot(Y ~ X, data=df, main="Y by X")
 
 m = aov_ez(dv="Y", within="X", id="PId", type=3, data=df)
 summary(m)$sphericity.tests # Mauchly's test of sphericity
-print(check_sphericity(m))  # same
+check_sphericity(m)         # same
 
 anova(m, correction="none") # use if p≥.05, no violation of sphericity
 anova(m, correction="GG")   # use if p<.05, sphericity violation
 
 ## post hoc pairwise comparisons
-emmeans(m, pairwise ~ X, adjust="holm")
+emm = emmeans(m, pairwise ~ X, adjust="holm"); print(emm)
+sig = sqrt(anova(m, correction="none")["X","MSE"]) # pooled residual SD
+eff_size(emm, sigma=sig, edf=df.residual(m$lm))
+
 
 
 
@@ -197,20 +209,21 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
+msd <- ddply(df, ~ X1 + X2, function(data) c(
+  "Mean"=mean(data$Y), 
+  "SD"=sd(data$Y)
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -220,13 +233,16 @@ arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]
 
 m = aov_ez(dv="Y", between=c("X1","X2"), id="PId", type=3, data=df)
 leveneTest(Y ~ X1*X2, data=df, center=mean) # same
-print(check_homogeneity(m)) # Levene's test
+check_homogeneity(m) # Levene's test
 
 anova(m) # use if p≥.05, no violation of homoscedasticity, else use...
+
 Anova(m$lm, type=3, white.adjust=TRUE) # White-adjusted ANOVA
+eta_squared(m$lm, generalized=TRUE)
 
 ## post hoc pairwise comparisons
-emmeans(m, pairwise ~ X1*X2, adjust="holm")
+emm = emmeans(m, pairwise ~ X1*X2, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m$lm), edf=df.residual(m$lm))
 
 
 
@@ -249,20 +265,21 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
+msd <- ddply(df, ~ X1 + X2, function(data) c(
+  "Mean"=mean(data$Y), 
+  "SD"=sd(data$Y)
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -273,13 +290,18 @@ arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]
 m = lm(Y ~ X1*X2, data=df)  # fit model
 m = aov(Y ~ X1*X2, data=df) # equivalent
 leveneTest(Y ~ X1*X2, data=df, center=mean) # Levene's test
-print(check_homogeneity(m)) # same
+check_homogeneity(m) # similar
 
 anova(m) # use if p≥.05, no violation of homogeneity, else use...
+eta_squared(m, generalized=TRUE)
+
 Anova(m, type=3, white.adjust=TRUE) # White-adjusted ANOVA
+eta_squared(m, generalized=TRUE)
 
 ## post hoc pairwise comparisons
-emmeans(m, pairwise ~ X1*X2, adjust="holm")
+emm = emmeans(m, pairwise ~ X1*X2, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m), edf=df.residual(m))
+
 
 
 
@@ -308,20 +330,21 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
+msd <- ddply(df, ~ X1 + X2, function(data) c(
+  "Mean"=mean(data$Y), 
+  "SD"=sd(data$Y)
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -331,13 +354,15 @@ arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]
 
 m = aov_ez(dv="Y", within=c("X1","X2"), id="PId", type=3, data=df) # fit model
 summary(m)$sphericity.tests # Mauchly's test of sphericity
-print(check_sphericity(m))  # same
+check_sphericity(m) # same
 
 anova(m, correction="none") # use if p≥.05, no violation of sphericity
 anova(m, correction="GG")   # Greenhouse-Geisser correction
 
 ## post hoc pairwise comparisons
-emmeans(m, pairwise ~ X1*X2, adjust="holm")
+emm = emmeans(m, pairwise ~ X1*X2, adjust="holm"); print(emm)
+sig = sqrt(anova(m, correction="none")["X1:X2","MSE"])
+eff_size(emm, sigma=sig, edf=df.residual(m$lm))
 
 
 
@@ -362,20 +387,21 @@ df <- df[order(df$PId),] # sort by PId
 row.names(df) <- 1:nrow(df) # restore row numbers
 View(df)
 
+msd <- ddply(df, ~ X1 + X2, function(data) c(
+  "Mean"=mean(data$Y), 
+  "SD"=sd(data$Y)
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -385,8 +411,9 @@ arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]
 
 m = lmer(Y ~ X1*X2 + (1|PId), data=df) # sphericity is N/A for LMMs
 Anova(m, type=3, test.statistic="F")
+eta_squared(m, partial=TRUE)
   
 ## post hoc pairwise comparisons
-emmeans(m, pairwise ~ X1*X2, adjust="holm")
-
+emm = emmeans(m, pairwise ~ X1*X2, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m), edf=df.residual(m))
 

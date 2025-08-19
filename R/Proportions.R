@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### November 14, 2018
-### Updated: 3/13/2025
+### Updated: 8/13/2025
 ###
 
 ###
@@ -91,7 +91,7 @@ p.adjust(c(yn$p.value, ym$p.value, nm$p.value), method="holm")
 # or, equivalently
 multinomial.multcomp(xt, p.method="holm") # same results as above
 
-# For Y's response categories, test each against a chance proportion of the total.
+# For Y's response categories, test each against a chance proportion of the total
 y = binom.test(xt[1], nrow(df), p=1/length(xt)) # yes
 n = binom.test(xt[2], nrow(df), p=1/length(xt)) # no
 m = binom.test(xt[3], nrow(df), p=1/length(xt)) # maybe
@@ -127,6 +127,7 @@ chisq.test(xt) # omnibus test
 chisq.multcomp(xt, p.method="holm") # xt shows levels
 # to get the chi-squared statistics, use qchisq(1-p, df=1),
 # where p is the uncorrected (p.method="none“) pairwise p-value:
+chisq.multcomp(xt, p.method="none")
 qchisq(1 - 0.0038, df=1) # 8.376996
 
 
@@ -286,12 +287,14 @@ p.adjust(c(yn$p.value, ym$p.value, nm$p.value), method="holm")
 chisq.multcomp(xt, p.method="holm") # xt shows levels
 # to get the chi-Squared statistics, use qchisq(1-p, df=1),
 # where p is the uncorrected (p.method="none“) pairwise p-value:
+chisq.multcomp(xt, p.method="none")
 qchisq(1 - 4.5e-05, df=1) # 16.6479
 
 # or, compare cells to expected frequencies using standardized residuals
 chisq.posthoc.test(xt, method="holm")
 # to get the chi-squared statistics, use qchisq(1-p, df=1),
 # where p is the uncorrected (p.method="none“) p-value:
+chisq.posthoc.test(xt, method="none")
 qchisq(1 - 0.004311, df=1) # 8.147944
 
 # or, test each column against chance
@@ -352,7 +355,7 @@ ddply(df, ~ X, function(data) c(
   "chocolate"=sum(data$Y == "chocolate"),
   "strawberry"=sum(data$Y == "strawberry")
 ))
-mosaicplot( ~ X + Y, data=df, col=c("beige","tan","pink"), main="Ice Cream by Season", xlab="Season")
+mosaicplot( ~ X + Y, data=df, col=c("beige","tan","pink"), main="Ice Cream by Season", xlab="Season", ylab="Ice Cream")
 
 xt = xtabs( ~ X + Y, data=df) # for later use
 View(xt)

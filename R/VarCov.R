@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### October 23, 2021
-### Updated: 3/13/2025
+### Updated: 8/18/2025
 ###
 
 ###
@@ -13,19 +13,21 @@
 ### (Variance-covariance structures for linear mixed models)
 ###
 
-library(nlme)     # for lme
-library(lme4)     # for lmer
+library(plyr)       # for ddply
+library(nlme)       # for lme
+library(lme4)       # for lmer
 library(lmerTest)
-library(MuMIn)    # for AICc
-library(car)      # for Anova
-library(emmeans)  # for emmeans
+library(MuMIn)      # for AICc
+library(car)        # for Anova
+library(effectsize) # for eta_squared
+library(emmeans)    # for emmeans, eff_size
 
 
 ### R code for common covariance structures. 
 ### See ?nlme::corClasses, ?nlme::varClasses.
 ### See also https://rpubs.com/samuelkn/CovarianceStructuresInR
-### See also https://www.ibm.com/docs/en/spss-statistics/30.0.0?topic=mixed-covariance-structure-list-command
-### See also https://www.ibm.com/docs/en/spss-statistics/30.0.0?topic=statistics-covariance-structures
+### See also https://www.ibm.com/docs/en/spss-statistics/31.0.0?topic=mixed-covariance-structure-list-command
+### See also https://www.ibm.com/docs/en/spss-statistics/31.0.0?topic=statistics-covariance-structures
 
 ## Dummy data has one repeated factor X with three levels (a,b,c) and continuous response Y
 set.seed(123)
@@ -55,13 +57,8 @@ plot(Y ~ X, data=df, main="Y by X")
 
 # NOTES ON lme4::lmer()
 #   The lme4::lmer function does not allow specifying common variance-covariance (VCV) structures 
-#   for repeated factors or residuals. Therefore, we must use nlme::lme for this. For a list of 
-#   common VCV structures, see 
-#   https://www.ibm.com/docs/en/spss-statistics/30.0.0?topic=mixed-covariance-structure-list-command. 
-#   For their matrix formulations, see 
-#   https://www.ibm.com/docs/en/spss-statistics/30.0.0?topic=statistics-covariance-structures. For a 
-#   treatment in R, see https://rpubs.com/samuelkn/CovarianceStructuresInR.
-m.lmer = lmer(Y ~ X + (1|PId), data=df) # random intercept for each participant
+#   for repeated factors or residuals. Therefore, we must use nlme::lme for this.
+m.lmer = lmer(Y ~ X + (1|PId), data=df)
 
 # NOTES ON nlme::lme()
 #  The correlation parameter sets covariances (matrix off-diagonal) and the weights parameter sets 
@@ -74,12 +71,11 @@ m.lmer = lmer(Y ~ X + (1|PId), data=df) # random intercept for each participant
 #
 #  For more information, see ?nlme::lmeControl.
 #  
-#  Note that the TPH fit, below, uses this control parameter to avoid a convergence error.
+#  Note that the TPH fit, below, uses this control parameter to overcome a convergence error.
 
-##
+
 #### Variance-covariance structures ####
 ## ...even more available at ?nlme::corClasses
-##
 
 ## ID. Scaled identity.
 ## All variances are equal, and all covariances are zero.
@@ -164,36 +160,48 @@ for (i in 1:length(models)) {
 anova(m.lmer, type="I")
 anova(m.lmer, type="II")
 anova(m.lmer, type="III")
+
 Anova(m.lmer, type=3, test.statistic="F") # only lmer produces "F", lme ignores
 Anova(m.lmer, type=3, test.statistic="Chisq")
+eta_squared(m.lmer, partial=TRUE)
 
 for (i in 2:length(models)) {
   print(paste0("-------------------- #", i, " --------------------"))
   print(anova(models[[i]], type="sequential")) # Type I ANOVA
+  print(eta_squared(models[[i]], partial=TRUE))
+  cat("\n")
 }
 for (i in 2:length(models)) {
   print(paste0("-------------------- #", i, " --------------------"))
   print(anova(models[[i]], type="marginal"))   # Type III ANOVA
+  print(eta_squared(models[[i]], partial=TRUE))
+  cat("\n")
 }
+
 
 
 #### Post hoc pairwise comparisons ####
 ## See https://cran.r-project.org/web/packages/emmeans/vignettes/models.html
 # 
+
 # Valid lme4::lmer() 'adjust' parameters:  
 #   "tukey" (default), "holm", "scheffe", "sidak", "dunnettx", "mvt",  
 #   "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"
 # 
 # Valid lme4::lmer() df 'mode' parameters: 
 #   “kenward-roger”, “satterthwaite”, “asymptotic”
-emmeans(m.lmer, pairwise ~ X, adjust="holm", mode="kenward-roger")$contrasts # lme4::lmer model
+emm = emmeans(m.lmer, pairwise ~ X, adjust="holm", mode="kenward-roger"); print(emm)  # lme4::lmer model
+eff_size(emm, sigma=sigma(m.lmer), edf=df.residual(m.lmer))
+
 
 # Valid nlme::lme() df 'mode' parameters: 
 #   “auto” (default), “containment”, “satterthwaite”, “appx-satterthwaite”, 
 #   “boot-satterthwaite”, “asymptotic”
 for (i in 2:length(models)) {
   print(paste0("-------------------- #", i, " --------------------"))
-  print(emmeans(models[[i]], pairwise ~ X, adjust="holm", mode="containment")$contrasts) # nlme::lme models
+  emm = emmeans(models[[i]], pairwise ~ X, adjust="holm", mode="containment"); print(emm)  # nlme::lme models
+  eff = eff_size(emm, sigma=sigma(models[[i]]), edf=models[[i]]$fixDF$terms[["X"]]); print(eff)
 }
+
 
 

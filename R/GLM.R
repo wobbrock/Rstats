@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### March 12, 2019
-### Updated: 3/13/2025
+### Updated: 8/18/2025
 ###
 
 ###
@@ -15,11 +15,12 @@
 
 library(plyr) # for ddply
 library(car) # for Anova
-library(emmeans) # for emmeans, test
+library(effectsize) # for eta_squared
+library(emmeans) # for emmeans, test, eff_size
+library(performance) # for check_*
 library(nnet) # for multinom
 library(multpois) # for glm.mp, Anova.mp, glm.mp.con
 library(MASS) # for polr
-library(performance) # for check_*
 library(glmmTMB) # for glmmTMB
 library(MASS) # for glm.nb
 
@@ -62,10 +63,14 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m = lm(Y ~ X, data=df)
-print(check_normality(m))
-print(check_homogeneity(m))
+check_normality(m)
+check_homogeneity(m)
+
 Anova(m, type=3, test.statistic="F")
-emmeans(m, pairwise ~ X, adjust="holm")
+eta_squared(m, generalized=TRUE)
+
+emm = emmeans(m, pairwise ~ X, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m), edf=df.residual(m))
 
 
 
@@ -103,14 +108,18 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = lm(Y ~ X, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = lm(log(Y) ~ X, data=df)
-print(check_normality(m))
-print(check_homogeneity(m))
+check_normality(m)
+check_homogeneity(m)
+
 Anova(m, type=3, test.statistic="F")
-emmeans(m, pairwise ~ X, adjust="holm")
+eta_squared(m, generalized=TRUE)
+
+emm = emmeans(m, pairwise ~ X, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m), edf=df.residual(m))
 
 
 
@@ -149,8 +158,8 @@ emmeans(m, pairwise ~ X, adjust="holm")
 # df has one between-Ss. factor (X) w/levels (a,b,c) and polytomous response (Y)
 set.seed(123)
 a = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.5, 0.3, 0.2))
-b = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.3, 0.2, 0.5))
-c = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.4, 0.5, 0.1))
+b = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.2, 0.2, 0.6))
+c = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.3, 0.5, 0.2))
 df = data.frame(
   PId = factor(seq(1, 60, 1)),
   X = factor(rep(c("a","b","c"), each=20)),
@@ -175,7 +184,8 @@ Anova(m0, type=3)
 # in a post on StackExchange.
 emmeans::test(
   contrast(emmeans(m0, ~ X | Y, mode="latent"), method="pairwise", ref=1), 
-  joint=TRUE, by="contrast"
+  joint=TRUE, 
+  by="contrast"
 )
 
 # instead, use the multinomial-Poisson trick
@@ -210,6 +220,7 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
+
 mosaicplot( ~ X + Y, data=df, main="Y by X", col=terrain.colors(7))
 
 boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
@@ -220,7 +231,7 @@ par(mfrow=c(3,1))
   hist(df[df$X == "c",]$Y, main="Y by X=c", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="lightgreen")
 par(mfrow=c(1,1))
 
-df$Y = ordered(df$Y)
+df$Y = ordered(df$Y, levels=seq(1,7,1))
 m = polr(Y ~ X, data=df, Hess=TRUE)
 Anova(m, type=3)
 emmeans(m, pairwise ~ X, adjust="holm")
@@ -261,7 +272,8 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m = glm(Y ~ X, data=df, family=poisson)
-print(check_overdispersion(m))
+check_overdispersion(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X, adjust="holm")
 
@@ -306,7 +318,7 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = glm(Y ~ X, data=df, family=poisson)
-print(check_zeroinflation(m0))
+check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X, data=df, family=poisson, ziformula=~1)
 Anova(m, type=3)
@@ -348,10 +360,11 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = glm(Y ~ X, data=df, family=poisson)
-print(check_overdispersion(m0))
+check_overdispersion(m0)
 
 m = glm.nb(Y ~ X, data=df)
-print(check_overdispersion(m))
+check_overdispersion(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X, adjust="holm")
 
@@ -396,10 +409,10 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = glm(Y ~ X, data=df, family=poisson)
-print(check_overdispersion(m0))
+check_overdispersion(m0)
 
 m0 = glm.nb(Y ~ X, data=df)
-print(check_zeroinflation(m0))
+check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X, data=df, family=nbinom2, ziformula=~1)
 Anova(m, type=3)
@@ -441,8 +454,8 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = lm(Y ~ X, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = glm(Y ~ X, data=df, family=Gamma(link="log"))
 Anova(m, type=3)
@@ -484,8 +497,8 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 m0 = lm(Y ~ X, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = glm(Y ~ X, data=df, family=Gamma)
 Anova(m, type=3)
@@ -516,7 +529,7 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -524,21 +537,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -554,10 +564,14 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m = lm(Y ~ X1*X2, data=df)
-print(check_normality(m))
-print(check_homogeneity(m))
+check_normality(m)
+check_homogeneity(m)
+
 Anova(m, type=3, test.statistic="F")
-emmeans(m, pairwise ~ X1*X2, adjust="holm")
+eta_squared(m, generalized=TRUE)
+
+emm = emmeans(m, pairwise ~ X1*X2, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m), edf=df.residual(m))
 
 
 
@@ -580,7 +594,7 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -588,21 +602,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -618,14 +629,18 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = lm(Y ~ X1*X2, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = lm(log(Y) ~ X1*X2, data=df)
-print(check_normality(m))
-print(check_homogeneity(m))
+check_normality(m)
+check_homogeneity(m)
+
 Anova(m, type=3, test.statistic="F")
-emmeans(m, pairwise ~ X1*X2, adjust="holm")
+eta_squared(m, generalized=TRUE)
+
+emm = emmeans(m, pairwise ~ X1*X2, adjust="holm"); print(emm)
+eff_size(emm, sigma=sigma(m), edf=df.residual(m))
 
 
 
@@ -696,7 +711,8 @@ Anova(m0, type=3)
 # in a post on StackExchange.
 emmeans::test(
   contrast(emmeans(m0, ~ X1*X2 | Y, mode="latent"), method="pairwise", ref=1), 
-  joint=TRUE, by="contrast"
+  joint=TRUE, 
+  by="contrast"
 )
 
 # instead, use the multinomial-Poisson trick
@@ -725,7 +741,7 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -733,23 +749,20 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=terrain.colors(7))
 
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -764,7 +777,7 @@ par(mfrow=c(4,1))
   hist(df[df$X1 == "b" & df$X2 == "b",]$Y, main="Y by (b,b)", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="blue")
 par(mfrow=c(1,1))
 
-df$Y = ordered(df$Y)
+df$Y = ordered(df$Y, levels=seq(1,7,1))
 m = polr(Y ~ X1*X2, data=df, Hess=TRUE)
 Anova(m, type=3)
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
@@ -790,7 +803,7 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -798,21 +811,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -828,7 +838,8 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m = glm(Y ~ X1*X2, data=df, family=poisson)
-print(check_overdispersion(m))
+check_overdispersion(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
 
@@ -859,7 +870,7 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -867,21 +878,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -897,7 +905,7 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = glm(Y ~ X1*X2, data=df, family=poisson)
-print(check_zeroinflation(m0))
+check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X1*X2, data=df, family=poisson, ziformula=~1)
 Anova(m, type=3)
@@ -924,7 +932,7 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -932,12 +940,13 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
@@ -962,10 +971,11 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = glm(Y ~ X1*X2, data=df, family=poisson)
-print(check_overdispersion(m0))
+check_overdispersion(m0)
 
 m = glm.nb(Y ~ X1*X2, data=df)
-print(check_overdispersion(m))
+check_overdispersion(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
 
@@ -996,7 +1006,7 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -1004,21 +1014,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -1034,10 +1041,10 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = glm(Y ~ X1*X2, data=df, family=poisson)
-print(check_overdispersion(m0))
+check_overdispersion(m0)
 
 m0 = glm.nb(Y ~ X1*X2, data=df)
-print(check_zeroinflation(m0))
+check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X1*X2, data=df, family=nbinom2, ziformula=~1)
 Anova(m, type=3)
@@ -1064,7 +1071,7 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -1072,21 +1079,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -1102,8 +1106,8 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = lm(Y ~ X1*X2, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = glm(Y ~ X1*X2, data=df, family=Gamma(link="log"))
 Anova(m, type=3)
@@ -1130,7 +1134,7 @@ contrasts(df$X1) <- "contr.sum"
 contrasts(df$X2) <- "contr.sum"
 View(df)
 
-ddply(df, ~ X1 + X2, function(data) c(
+msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Nrows"=nrow(data),
   "Min"=min(data$Y),
   "Mean"=mean(data$Y), 
@@ -1138,21 +1142,18 @@ ddply(df, ~ X1 + X2, function(data) c(
   "Median"=median(data$Y),
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
-))
+)); print(msd)
+
 with(df, interaction.plot(
   X1, 
   X2, 
   Y, 
-  ylim=c(min(Y), max(Y)), 
+  ylim=c(min(msd$Mean - msd$SD), max(msd$Mean + msd$SD)), 
   ylab="Y",
   main="Y by X1, X2",
   lty=1, 
   lwd=3, 
   col=c("red","blue")
-))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
 ))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
@@ -1168,8 +1169,8 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 m0 = lm(Y ~ X1*X2, data=df)
-print(check_normality(m0))
-print(check_homogeneity(m0))
+check_normality(m0)
+check_homogeneity(m0)
 
 m = glm(Y ~ X1*X2, data=df, family=Gamma)
 Anova(m, type=3)

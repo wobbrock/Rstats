@@ -5,7 +5,7 @@
 ### The Information School
 ### University of Washington
 ### August 2, 2023
-### Updated: 3/13/2025
+### Updated: 8/06/2025
 ###
 
 ###
@@ -14,7 +14,7 @@
 ###
 
 library(plyr) # for ddply
-library(EnvStats) # for gofTest
+library(EnvStats) # for gofTest, print.gof
 library(fitdistrplus) # for fitdist, gofstat
 library(performance) # for check_overdispersion
 
@@ -77,8 +77,8 @@ par(mfrow=c(2,1))
   curve(dnorm(x, mean=fb$distribution.parameters[1], sd=fb$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
 par(mfrow=c(1,1))
 
-print(fa)
-print(fb)
+print.gof(fa)
+print.gof(fb)
 
 
 
@@ -140,8 +140,8 @@ par(mfrow=c(2,1))
   curve(dlnorm(x, meanlog=fb$distribution.parameters[1], sdlog=fb$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
 par(mfrow=c(1,1))
 
-print(fa)
-print(fb)
+print.gof(fa)
+print.gof(fb)
 
 
 
@@ -216,7 +216,7 @@ var(df[df$X == "b",]$Y) / abs(mean(df[df$X == "b",]$Y)) > 1.15
 
 # another way to check for overdispersion
 m = glm(Y ~ X, data=df, family=poisson)
-print(check_overdispersion(m))
+check_overdispersion(m)
 
 
 
@@ -291,7 +291,7 @@ var(df[df$X == "b",]$Y) / abs(mean(df[df$X == "b",]$Y)) > 1.15
 
 # another way to check for overdispersion
 m = glm(Y ~ X, data=df, family=poisson)
-print(check_overdispersion(m))
+check_overdispersion(m)
 
 
 
@@ -353,8 +353,8 @@ par(mfrow=c(2,1))
   curve(dexp(x, rate=fb$distribution.parameters[1]), lty=1, lwd=3, col="blue", add=TRUE)
 par(mfrow=c(1,1))
 
-print(fa)
-print(fb)
+print.gof(fa)
+print.gof(fb)
 
 
 
@@ -416,6 +416,6 @@ par(mfrow=c(2,1))
   curve(dgamma(x, shape=fa$distribution.parameters[1], scale=fa$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
 par(mfrow=c(1,1))
 
-print(fa)
-print(fb)
+print.gof(fa)
+print.gof(fb)
 
