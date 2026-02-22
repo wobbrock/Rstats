@@ -1,11 +1,13 @@
 ###
+### #Rstats
+###
 ### Statistical Inference in R
 ### Jacob O. Wobbrock, Ph.D.
 ### wobbrock@uw.edu
 ### The Information School
 ### University of Washington
 ### November 14, 2018
-### Updated: 8/13/2025
+### Updated: 2/21/2026
 ###
 
 ###
@@ -13,16 +15,16 @@
 ### (Tests of proportion and association)
 ###
 
-library(plyr) # for ddply
-library(XNomial) # for xmulti
+library(plyr)               # for ddply
+library(XNomial)            # for xmulti
 library(chisq.posthoc.test) # for chisq.posthoc.test
-library(coin) # for symmetry_test, sign_test, pvalue
-library(RVAideMemoire) # for multinomial.test, 
-                       #     multinomial.multcomp, 
-                       #     chisq.multcomp, 
-                       #     fisher.multcomp, 
-                       #     G.test, 
-                       #     G.multcomp
+library(coin)               # for symmetry_test, sign_test, pvalue
+library(RVAideMemoire)      # for multinomial.test, 
+                            #     multinomial.multcomp, 
+                            #     chisq.multcomp, 
+                            #     fisher.multcomp, 
+                            #     G.test, 
+                            #     G.multcomp
 
 
 ## 
@@ -32,6 +34,7 @@ library(RVAideMemoire) # for multinomial.test,
 ##
 #### 1. Binomial test ####
 ##
+
 # df is a long-format data table w/columns for participant (PId) and 2-category outcome (Y)
 set.seed(123)
 a = sample(c("yes","no"), size=60, replace=TRUE, prob=c(0.7, 0.3))
@@ -57,6 +60,7 @@ binom.test(xt, p=0.5, alternative="two.sided")
 ##
 #### 2. Multinomial test ####
 ##
+
 # df is a long-format data table w/columns for participant (PId) and N-category outcome (Y)
 set.seed(123)
 a = sample(c("yes","no","maybe"), size=60, replace=TRUE, prob=c(0.3, 0.2, 0.5))
@@ -82,7 +86,8 @@ xmulti(xt, rep(1/length(xt), length(xt)), statName="Prob") # omnibus test
 multinomial.test(df$Y)
 
 ## Post hoc tests
-# For Y's response categories, test each in pairwise fashion against chance
+
+# For Y's categories, test each in pairwise fashion
 yn = binom.test(c(xt[1], xt[2]), p=1/2) # yes vs. no
 ym = binom.test(c(xt[1], xt[3]), p=1/2) # yes vs. maybe
 nm = binom.test(c(xt[2], xt[3]), p=1/2) # no vs. maybe
@@ -91,7 +96,7 @@ p.adjust(c(yn$p.value, ym$p.value, nm$p.value), method="holm")
 # or, equivalently
 multinomial.multcomp(xt, p.method="holm") # same results as above
 
-# For Y's response categories, test each against a chance proportion of the total
+# For Y's categories, test each against chance
 y = binom.test(xt[1], nrow(df), p=1/length(xt)) # yes
 n = binom.test(xt[2], nrow(df), p=1/length(xt)) # no
 m = binom.test(xt[3], nrow(df), p=1/length(xt)) # maybe
@@ -102,6 +107,7 @@ p.adjust(c(y$p.value, n$p.value, m$p.value), method="holm")
 ##
 #### 3. One-sample chi-squared test ####
 ##
+
 # df is a long-format data table w/columns for participant (PId) and N-category outcome (Y)
 set.seed(123)
 a = sample(c("yes","no","maybe"), size=60, replace=TRUE, prob=c(0.3, 0.2, 0.5))
@@ -124,7 +130,9 @@ View(xt)
 chisq.test(xt) # omnibus test
 
 ## Post hoc tests
+
 chisq.multcomp(xt, p.method="holm") # xt shows levels
+
 # to get the chi-squared statistics, use qchisq(1-p, df=1),
 # where p is the uncorrected (p.method="none“) pairwise p-value:
 chisq.multcomp(xt, p.method="none")
@@ -139,6 +147,7 @@ qchisq(1 - 0.0038, df=1) # 8.376996
 ##
 #### 4. Fisher's exact test ####
 ##
+
 # df is a long-format data table w/participant (PId), between-Ss. factor (X), and N-category outcome (Y)
 set.seed(123)
 a = sample(c("yes","no","maybe"), size=30, replace=TRUE, prob=c(0.3, 0.2, 0.5))
@@ -173,9 +182,9 @@ p.adjust(c(yn$p.value, ym$p.value, nm$p.value), method="holm")
 fisher.multcomp(xt, p.method="holm")
 
 # or, test each column against chance
-y = binom.test(xt[,1]) # yes
-n = binom.test(xt[,2]) # no
-m = binom.test(xt[,3]) # maybe
+y = binom.test(xt[,1]) # yes a vs. b
+n = binom.test(xt[,2]) # no a vs. b
+m = binom.test(xt[,3]) # maybe a vs. b
 p.adjust(c(y$p.value, n$p.value, m$p.value), method="holm")
 
 # or, test each row against chance
@@ -188,6 +197,7 @@ p.adjust(c(a$pProb, b$pProb), method="holm")
 ##
 #### 5. G-test ####
 ##
+
 # df is a long-format data table w/participant (PId), between-Ss. factor (X), and N-category outcome (Y)
 set.seed(123)
 a = sample(c("yes","no","maybe"), size=30, replace=TRUE, prob=c(0.3, 0.2, 0.5))
@@ -222,9 +232,9 @@ p.adjust(c(yn$p.value, ym$p.value, nm$p.value), method="holm")
 G.multcomp(xt, p.method="holm") # xt shows levels
 
 # or, test each column against chance
-y = G.test(xt[,1]) # yes
-n = G.test(xt[,2]) # no
-m = G.test(xt[,3]) # maybe
+y = G.test(xt[,1]) # yes a vs. b
+n = G.test(xt[,2]) # no a vs. b
+m = G.test(xt[,3]) # maybe a vs. b
 p.adjust(c(y$p.value, n$p.value, m$p.value), method="holm")
 
 # or, test each row against chance
@@ -253,6 +263,7 @@ p.adjust(c(a$p.value, b$p.value), method="holm")
 ##
 #### 6. Two-sample chi-squared test ####
 ##
+
 # df is a long-format data table w/participant (PId), between-Ss. factor (X), and N-category outcome (Y)
 set.seed(123)
 a = sample(c("yes","no","maybe"), size=30, replace=TRUE, prob=c(0.3, 0.2, 0.5))
@@ -285,6 +296,7 @@ p.adjust(c(yn$p.value, ym$p.value, nm$p.value), method="holm")
 
 # or, do all cellwise comparisons
 chisq.multcomp(xt, p.method="holm") # xt shows levels
+
 # to get the chi-Squared statistics, use qchisq(1-p, df=1),
 # where p is the uncorrected (p.method="none“) pairwise p-value:
 chisq.multcomp(xt, p.method="none")
@@ -292,15 +304,16 @@ qchisq(1 - 4.5e-05, df=1) # 16.6479
 
 # or, compare cells to expected frequencies using standardized residuals
 chisq.posthoc.test(xt, method="holm")
+
 # to get the chi-squared statistics, use qchisq(1-p, df=1),
 # where p is the uncorrected (p.method="none“) p-value:
 chisq.posthoc.test(xt, method="none")
 qchisq(1 - 0.004311, df=1) # 8.147944
 
 # or, test each column against chance
-y = chisq.test(xt[,1]) # yes
-n = chisq.test(xt[,2]) # no
-m = chisq.test(xt[,3]) # maybe
+y = chisq.test(xt[,1]) # yes a vs. b
+n = chisq.test(xt[,2]) # no a vs. b
+m = chisq.test(xt[,3]) # maybe a vs. b
 p.adjust(c(y$p.value, n$p.value, m$p.value), method="holm")
 
 # or, test each row against chance
@@ -333,7 +346,9 @@ p.adjust(c(a$p.value, b$p.value), method="holm")
 ##
 #### 7. Symmetry test ####
 ##
+
 # df is a long-format data table w/participant (PId), a within-Ss. factor (X), and N-category outcome (Y)
+##
 set.seed(123)
 fall   = sample(c("vanilla","chocolate","strawberry"), size=15, replace=TRUE, prob=c(0.6, 0.3, 0.1))
 winter = sample(c("vanilla","chocolate","strawberry"), size=15, replace=TRUE, prob=c(0.1, 0.6, 0.3))
@@ -392,7 +407,7 @@ glmer.mp.con(m, pairwise ~ X, adjust="holm", control=glmerControl(optimizer="bob
 
 # Counts within single seasons (across flavors) are independent, because
 # each respondent picked only one flavor per season.
-# We can use a one-sample test:
+# Therefore, we can use a one-sample test:
 fa = xmulti(xt[1,], rep(1/length(xt[1,]), length(xt[1,])), statName="Prob") # fall
 wi = xmulti(xt[2,], rep(1/length(xt[2,]), length(xt[2,])), statName="Prob") # winter
 sp = xmulti(xt[3,], rep(1/length(xt[3,]), length(xt[3,])), statName="Prob") # spring

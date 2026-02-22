@@ -1,11 +1,13 @@
 ###
+### #Rstats
+###
 ### Statistical Inference in R
 ### Jacob O. Wobbrock, Ph.D.
 ### wobbrock@uw.edu
 ### The Information School
 ### University of Washington
 ### March 12, 2019
-### Updated: 8/13/2025
+### Updated: 2/21/2026
 ###
 
 ###
@@ -13,24 +15,25 @@
 ### (Tests of ANOVA assumptions: Normality, homoscedasticity, sphericity)
 ###
 
-library(plyr) # for ddply
-library(afex) # for aov_ez
+library(plyr)        # for ddply
+library(afex)        # for aov_ez
 library(performance) # for check_*
-library(EnvStats) # for gofTest, print.gof
-library(lme4) # for lmer
-library(lmerTest)
-library(car) # for Anova
-library(effectsize) # for cohens_d, eta_squared
+library(EnvStats)    # for gofTest, print.gof
+library(lme4)        # for lmer
+library(lmerTest)    # for lmer
+library(car)         # for Anova
+library(effectsize)  # for cohens_d, eta_squared
 
 
 ###
-#### 1. Normality ####
+#### 1. Normality (Shapiro-Wilk test) ####
 ###
 
 ##
 ## Shapiro-Wilk normality tests
-## (on the conditional response)
-# 
+## on the conditional response
+##
+
 # df has two factors (X1,X2) each w/two levels (a,b) and continuous response (Y)
 set.seed(123)
 aa = round(rnorm(15, 30.0, 10.0), digits=2)
@@ -77,8 +80,9 @@ shapiro.test(df[df$X1 == "b" & df$X2 == "b",]$Y) # condition b,b
 
 ##
 ## Shapiro-Wilk normality test
-## (on model residuals)
-#
+## on model residuals
+##
+
 # df has two between-Ss. factors (X1,X2) each w/two levels (a,b) and continuous response (Y)
 set.seed(123)
 aa = round(rnorm(15, 30.0, 10.0), digits=2)
@@ -122,18 +126,19 @@ r = residuals(m$lm) # extract residuals
 mean(r); sum(r) # both should be ~0
 plot(r[1:length(r)], main="Residuals"); abline(h=0) # should look random
 qqnorm(r); qqline(r) # Q-Q plot
-xax = ceiling(max(abs(min(r)),abs(max(r)))) # balanced histogram
+xax = ceiling(max(abs(min(r)), abs(max(r)))) # balanced histogram
 hist(r, main="Histogram of residuals", xlim=c(-xax,+xax), freq=FALSE) 
 f = gofTest(r, distribution="norm") # GOF test
 curve(dnorm(x, mean=f$distribution.parameters[1], sd=f$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
-print.gof(f) # display fit
+print.gof(f)    # display fit
 shapiro.test(r) # Shapiro-Wilk test
 
 
 ##
 ## Shapiro-Wilk normality test
-## (on model residuals)
-#
+## on model residuals
+##
+
 # df has two within-Ss. factors (X1,X2) each w/two levels (a,b) and continuous response (Y)
 set.seed(123)
 aa = round(rnorm(15, 30.0, 10.0), digits=2)
@@ -179,7 +184,7 @@ r = residuals(m$lm) # extract residuals
 mean(r); sum(r) # both should be ~0
 plot(r[1:length(r)], main="Residuals"); abline(h=0) # should look random
 qqnorm(r); qqline(r) # Q-Q plot
-xax = ceiling(max(abs(min(r)),abs(max(r)))) # balanced histogram
+xax = ceiling(max(abs(min(r)), abs(max(r)))) # balanced histogram
 hist(r, main="Histogram of residuals", xlim=c(-xax,+xax), freq=FALSE) 
 f = gofTest(r, distribution="norm") # GOF test
 curve(dnorm(x, mean=f$distribution.parameters[1], sd=f$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
@@ -189,8 +194,9 @@ shapiro.test(r) # Shapiro-Wilk test
 
 ##
 ## Shapiro-Wilk test
-## (on residuals from linear mixed models)
-#
+## on residuals from linear mixed models
+##
+
 # df has two within-Ss. factors (X1,X2) each w/two levels (a,b) and continuous response (Y)
 set.seed(123)
 aa = round(rnorm(15, 30.0, 10.0), digits=2)
@@ -236,7 +242,7 @@ r = residuals(m) # extract residuals
 mean(r); sum(r) # both should be ~0
 plot(r[1:length(r)], main="Residuals"); abline(h=0) # should look random
 qqnorm(r); qqline(r) # Q-Q plot
-xax = ceiling(max(abs(min(r)),abs(max(r)))) # balanced histogram
+xax = ceiling(max(abs(min(r)), abs(max(r)))) # balanced histogram
 hist(r, main="Histogram of residuals", xlim=c(-xax,+xax), freq=FALSE) 
 f = gofTest(r, distribution="norm") # GOF test
 curve(dnorm(x, mean=f$distribution.parameters[1], sd=f$distribution.parameters[2]), lty=1, lwd=3, col="blue", add=TRUE)
@@ -246,10 +252,9 @@ shapiro.test(r) # Shapiro-Wilk test
 
 
 ###
-#### 2. Homogeneity of variance ####
+#### 2. Homoscedasticity (Levene's test) ####
 ###
 
-## (Levene's test)
 # df has one between-Ss. factor (X1), one within-Ss. factor (X2), and continuous response (Y)
 set.seed(123)
 aa = round(rnorm(15, 30.0, 10.0), digits=2)
@@ -309,10 +314,9 @@ eta_squared(m, partial=TRUE)
 
 
 ###
-#### 3. Sphericity ####
+#### 3. Sphericity (Mauchly's test) ####
 ###
 
-## (Mauchly's test)
 # df has one within-Ss. factor (X) w/levels (a,b,c) and continuous response (Y)
 set.seed(123)
 a = round(rnorm(20, 30.0, 10.0), digits=2)
@@ -337,7 +341,7 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-boxplot(Y ~ X, data=df, main="Y by X")
+boxplot(Y ~ X, main="Y by X", data=df)
 
 m = aov_ez(dv="Y", within="X", id="PId", type=3, data=df)
 summary(m)$sphericity.tests # Mauchly's test of sphericity

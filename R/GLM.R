@@ -1,11 +1,13 @@
 ###
+### #Rstats
+###
 ### Statistical Inference in R
 ### Jacob O. Wobbrock, Ph.D.
 ### wobbrock@uw.edu
 ### The Information School
 ### University of Washington
 ### March 12, 2019
-### Updated: 8/18/2025
+### Updated: 2/21/2026
 ###
 
 ###
@@ -13,16 +15,16 @@
 ### (Generalized linear models)
 ###
 
-library(plyr) # for ddply
-library(car) # for Anova
-library(effectsize) # for eta_squared
-library(emmeans) # for emmeans, test, eff_size
+library(plyr)        # for ddply
+library(car)         # for Anova
+library(effectsize)  # for eta_squared
+library(emmeans)     # for emmeans, test, eff_size
 library(performance) # for check_*
-library(nnet) # for multinom
-library(multpois) # for glm.mp, Anova.mp, glm.mp.con
-library(MASS) # for polr
-library(glmmTMB) # for glmmTMB
-library(MASS) # for glm.nb
+library(nnet)        # for multinom
+library(multpois)    # for glm.mp, Anova.mp, glm.mp.con
+library(MASS)        # for polr
+library(glmmTMB)     # for glmmTMB
+library(MASS)        # for glm.nb
 
 
 ###
@@ -32,6 +34,7 @@ library(MASS) # for glm.nb
 ##
 #### 1. Normal ####
 ##
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and continuous response (Y)
 set.seed(123)
 a = round(rnorm(20, mean=30.0, sd=12.0), digits=2)
@@ -54,7 +57,13 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 par(mfrow=c(3,1))
   hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(0,80), ylim=c(0,8), breaks=seq(0,80,10), col="pink")
@@ -69,14 +78,16 @@ check_homogeneity(m)
 Anova(m, type=3, test.statistic="F")
 eta_squared(m, generalized=TRUE)
 
-emm = emmeans(m, pairwise ~ X, adjust="holm"); print(emm)
-eff_size(emm, sigma=sigma(m), edf=df.residual(m))
+emm = emmeans(m, pairwise ~ X, adjust="holm")
+emm$contrasts
+eff_size(emm$emmeans, sigma=sigma(m), edf=df.residual(m))
 
 
 
 ##
 #### 2. Lognormal ####
 ##
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and skewed continuous response (Y)
 set.seed(123)
 a = round(rlnorm(20, meanlog=2.30, sdlog=0.90), digits=2)
@@ -99,7 +110,13 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 par(mfrow=c(3,1))
   hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(0,80), ylim=c(0,14), breaks=seq(0,80,10), col="pink")
@@ -118,14 +135,16 @@ check_homogeneity(m)
 Anova(m, type=3, test.statistic="F")
 eta_squared(m, generalized=TRUE)
 
-emm = emmeans(m, pairwise ~ X, adjust="holm"); print(emm)
-eff_size(emm, sigma=sigma(m), edf=df.residual(m))
+emm = emmeans(m, pairwise ~ X, adjust="holm")
+emm$contrasts
+eff_size(emm$emmeans, sigma=sigma(m), edf=df.residual(m))
 
 
 
 ##
 #### 3. Binomial ####
 ##
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and dichotomous response (Y)
 set.seed(123)
 a = sample(c("yes", "no"), 20, replace=TRUE, prob=c(0.7, 0.3))
@@ -144,7 +163,13 @@ ddply(df, ~ X, function(data) c(
   "yes"=sum(data$Y == "yes"),
   "no"=sum(data$Y == "no")
 ))
-mosaicplot( ~ X + Y, data=df, main="Y by X", col=c("lightgreen","pink"))
+
+mosaicplot( 
+  ~ X + Y, 
+  main="Y by X", 
+  col=c("lightgreen","pink"),
+  data=df
+)
 
 m = glm(Y ~ X, data=df, family=binomial)
 Anova(m, type=3)
@@ -155,6 +180,7 @@ emmeans(m, pairwise ~ X, adjust="holm")
 ##
 #### 4. Multinomial ####
 ##
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and polytomous response (Y)
 set.seed(123)
 a = sample(c("yes","no","maybe"), 20, replace=TRUE, prob=c(0.5, 0.3, 0.2))
@@ -174,14 +200,21 @@ ddply(df, ~ X, function(data) c(
   "no"=sum(data$Y == "no"),
   "maybe"=sum(data$Y == "maybe")
 ))
-mosaicplot( ~ X + Y, data=df, main="Y by X", col=c("lightgreen","pink","lightyellow"))
+
+mosaicplot( 
+  ~ X + Y, 
+  main="Y by X", 
+  col=c("lightgreen","pink","lightyellow"),
+  data=df
+)
 
 m0 = multinom(Y ~ X, data=df, trace=FALSE)
 Anova(m0, type=3)
 
 # post hoc tests on multinom models are not straightforward.
 # this solution was offered by Russ Lenth, author of emmeans,
-# in a post on StackExchange.
+# in a post on StackExchange. the results seem overly 
+# conservative, i.e., prone to Type II errors.
 emmeans::test(
   contrast(emmeans(m0, ~ X | Y, mode="latent"), method="pairwise", ref=1), 
   joint=TRUE, 
@@ -198,6 +231,7 @@ glm.mp.con(m, pairwise ~ X, adjust="holm")
 ##
 #### 5. Ordinal ####
 ##
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and ordinal response (1-7)
 set.seed(123)
 a = laply(round(rnorm(20, mean=4.15, sd=1.55), digits=0), function(x) min(max(x, 1), 7))
@@ -221,9 +255,19 @@ ddply(df, ~ X, function(data) c(
   "Max"=max(data$Y)
 ))
 
-mosaicplot( ~ X + Y, data=df, main="Y by X", col=terrain.colors(7))
+mosaicplot( 
+  ~ X + Y, 
+  main="Y by X", 
+  col=terrain.colors(7),
+  data=df
+)
 
-boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 par(mfrow=c(3,1))
   hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(1,7), ylim=c(0,8), breaks=seq(1,7,1), col="pink")
@@ -241,6 +285,7 @@ emmeans(m, pairwise ~ X, adjust="holm")
 ##
 #### 6. Poisson ####
 ##
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and count response (Y)
 set.seed(123)
 a = round(rpois(20, lambda=4.00), digits=0)
@@ -263,7 +308,13 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 par(mfrow=c(3,1))
   hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(0,14), ylim=c(0,11), breaks=seq(0,14,2), col="pink")
@@ -282,6 +333,7 @@ emmeans(m, pairwise ~ X, adjust="holm")
 ##
 #### 7. Zero-Inflated Poisson ####
 ##
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and zero-inflated count response (Y)
 set.seed(123)
 a = round(rpois(20, lambda=4.50), digits=0)
@@ -309,7 +361,13 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 par(mfrow=c(3,1))
   hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(0,12), ylim=c(0,9), breaks=seq(0,12,2), col="pink")
@@ -321,6 +379,8 @@ m0 = glm(Y ~ X, data=df, family=poisson)
 check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X, data=df, family=poisson, ziformula=~1)
+check_zeroinflation(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X, adjust="holm")
 
@@ -351,7 +411,13 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 par(mfrow=c(3,1))
   hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(0,10), ylim=c(0,12), breaks=seq(0,10,2), col="pink")
@@ -373,6 +439,7 @@ emmeans(m, pairwise ~ X, adjust="holm")
 ##
 #### 9. Zero-Inflated Negative Binomial ####
 ##
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and zero-inflated overdispersed count response (Y)
 set.seed(123)
 a = round(rnbinom(20, size=3.5, mu=2.0), digits=0)
@@ -400,7 +467,13 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 par(mfrow=c(3,1))
   hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(0,16), ylim=c(0,14), breaks=seq(0,16,2), col="pink")
@@ -412,9 +485,13 @@ m0 = glm(Y ~ X, data=df, family=poisson)
 check_overdispersion(m0)
 
 m0 = glm.nb(Y ~ X, data=df)
+check_overdispersion(m0)
 check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X, data=df, family=nbinom2, ziformula=~1)
+check_overdispersion(m)
+check_zeroinflation(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X, adjust="holm")
 
@@ -423,6 +500,7 @@ emmeans(m, pairwise ~ X, adjust="holm")
 ##
 #### 10. Exponential ####
 ##
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and exponential response (Y)
 set.seed(123)
 a = round(rexp(20, rate=1/6.00), digits=2)
@@ -445,7 +523,13 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 par(mfrow=c(3,1))
   hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(0,36), ylim=c(0,13), breaks=seq(0,36,4), col="pink")
@@ -466,6 +550,7 @@ emmeans(m, pairwise ~ X, adjust="holm")
 ##
 #### 11. Gamma ####
 ##
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and skewed continuous response (Y)
 set.seed(123)
 a = round(rgamma(20, shape=5.0, scale=4.0), digits=2)
@@ -488,7 +573,13 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-boxplot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 par(mfrow=c(3,1))
   hist(df[df$X == "a",]$Y, main="Y by X=a", xlab="Y", xlim=c(0,36), ylim=c(0,8), breaks=seq(0,36,4), col="pink")
@@ -513,6 +604,7 @@ emmeans(m, pairwise ~ X, adjust="holm")
 ##
 #### 12. Normal ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and continuous response (Y)
 set.seed(123)
 aa = round(rnorm(15, mean=30.0, sd=12.0), digits=2)
@@ -570,14 +662,16 @@ check_homogeneity(m)
 Anova(m, type=3, test.statistic="F")
 eta_squared(m, generalized=TRUE)
 
-emm = emmeans(m, pairwise ~ X1*X2, adjust="holm"); print(emm)
-eff_size(emm, sigma=sigma(m), edf=df.residual(m))
+emm = emmeans(m, pairwise ~ X1*X2, adjust="holm")
+emm$contrasts
+eff_size(emm$emmeans, sigma=sigma(m), edf=df.residual(m))
 
 
 
 ##
 #### 13. Lognormal ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and skewed continuous response (Y)
 set.seed(123)
 aa = round(rlnorm(15, meanlog=2.20, sdlog=0.80), digits=2)
@@ -639,14 +733,16 @@ check_homogeneity(m)
 Anova(m, type=3, test.statistic="F")
 eta_squared(m, generalized=TRUE)
 
-emm = emmeans(m, pairwise ~ X1*X2, adjust="holm"); print(emm)
-eff_size(emm, sigma=sigma(m), edf=df.residual(m))
+emm = emmeans(m, pairwise ~ X1*X2, adjust="holm")
+emm$contrasts
+eff_size(emm$emmeans, sigma=sigma(m), edf=df.residual(m))
 
 
 
 ##
 #### 14. Binomial ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and dichotomous response (Y)
 set.seed(123)
 aa = sample(c("yes", "no"), 15, replace=TRUE, prob=c(0.7, 0.3))
@@ -668,7 +764,13 @@ ddply(df, ~ X1 + X2, function(data) c(
   "yes"=sum(data$Y == "yes"),
   "no"=sum(data$Y == "no")
 ))
-mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=c("lightgreen","pink"))
+
+mosaicplot(
+  ~ X1 + X2 + Y, 
+  main="Y by X1, X2", 
+  col=c("lightgreen","pink"),
+  data=df
+)
 
 m = glm(Y ~ X1*X2, data=df, family=binomial)
 Anova(m, type=3)
@@ -679,6 +781,7 @@ emmeans(m, pairwise ~ X1*X2, adjust="holm")
 ##
 #### 15. Multinomial ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and polytomous response (Y)
 set.seed(123)
 aa = sample(c("yes","no","maybe"), 15, replace=TRUE, prob=c(0.5, 0.3, 0.2))
@@ -701,14 +804,21 @@ ddply(df, ~ X1 + X2, function(data) c(
   "no"=sum(data$Y == "no"),
   "maybe"=sum(data$Y == "maybe")
 ))
-mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=c("lightgreen","pink","lightyellow"))
+
+mosaicplot(
+  ~ X1 + X2 + Y, 
+  main="Y by X1, X2", 
+  col=c("lightgreen","pink","lightyellow"),
+  data=df
+)
 
 m0 = multinom(Y ~ X1 * X2, data=df, trace=FALSE)
 Anova(m0, type=3)
 
 # post hoc tests on multinom models are not straightforward.
 # this solution was offered by Russ Lenth, author of emmeans,
-# in a post on StackExchange.
+# in a post on StackExchange. the results seem overly 
+# conservative, i.e., prone to Type II errors.
 emmeans::test(
   contrast(emmeans(m0, ~ X1*X2 | Y, mode="latent"), method="pairwise", ref=1), 
   joint=TRUE, 
@@ -725,6 +835,7 @@ glm.mp.con(m, pairwise ~ X1*X2, adjust="holm")
 ##
 #### 16. Ordinal ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and ordinal response (1-7)
 set.seed(123)
 aa = laply(round(rnorm(15, mean=5.25, sd=1.00), digits=0), function(x) min(max(x, 1), 7))
@@ -751,7 +862,12 @@ msd <- ddply(df, ~ X1 + X2, function(data) c(
   "Max"=max(data$Y)
 )); print(msd)
 
-mosaicplot( ~ X1 + X2 + Y, data=df, main="Y by X1, X2", col=terrain.colors(7))
+mosaicplot(
+  ~ X1 + X2 + Y, 
+  main="Y by X1, X2", 
+  col=terrain.colors(7),
+  data=df
+)
 
 with(df, interaction.plot(
   X1, 
@@ -787,6 +903,7 @@ emmeans(m, pairwise ~ X1*X2, adjust="holm")
 ##
 #### 17. Poisson ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and count response (Y)
 set.seed(123)
 aa = round(rpois(15, lambda=4.00), digits=0)
@@ -848,6 +965,7 @@ emmeans(m, pairwise ~ X1*X2, adjust="holm")
 ##
 #### 18. Zero-Inflated Poisson ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and zero-inflated count response (Y)
 set.seed(123)
 aa = round(rpois(15, lambda=4.00), digits=0)
@@ -908,6 +1026,8 @@ m0 = glm(Y ~ X1*X2, data=df, family=poisson)
 check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X1*X2, data=df, family=poisson, ziformula=~1)
+check_zeroinflation(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
 
@@ -916,6 +1036,7 @@ emmeans(m, pairwise ~ X1*X2, adjust="holm")
 ##
 #### 19. Negative Binomial ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and overdispersed count response (Y)
 set.seed(123)
 aa = round(rnbinom(15, size=7.0, mu=6.0), digits=0)
@@ -953,10 +1074,6 @@ with(df, interaction.plot(
   lwd=3, 
   col=c("red","blue")
 ))
-msd <- ddply(df, ~ X1 + X2, function(data) c(
-  "Mean"=mean(data$Y), 
-  "SD"=sd(data$Y)
-))
 dx = 0.0035  # nudge
 arrows(x0=1-dx, y0=msd[1,]$Mean - msd[1,]$SD, x1=1-dx, y1=msd[1,]$Mean + msd[1,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="red")
 arrows(x0=1+dx, y0=msd[2,]$Mean - msd[2,]$SD, x1=1+dx, y1=msd[2,]$Mean + msd[2,]$SD, angle=90, code=3, lty=1, lwd=3, length=0.2, col="blue")
@@ -984,6 +1101,7 @@ emmeans(m, pairwise ~ X1*X2, adjust="holm")
 ##
 #### 20. Zero-Inflated Negative Binomial ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and zero-inflated overdispersed count response (Y)
 set.seed(123)
 aa = round(rnbinom(15, size=8.0, mu=6.0), digits=0)
@@ -1044,9 +1162,13 @@ m0 = glm(Y ~ X1*X2, data=df, family=poisson)
 check_overdispersion(m0)
 
 m0 = glm.nb(Y ~ X1*X2, data=df)
+check_overdispersion(m0)
 check_zeroinflation(m0)
 
 m = glmmTMB(Y ~ X1*X2, data=df, family=nbinom2, ziformula=~1)
+check_overdispersion(m)
+check_zeroinflation(m)
+
 Anova(m, type=3)
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
 
@@ -1055,6 +1177,7 @@ emmeans(m, pairwise ~ X1*X2, adjust="holm")
 ##
 #### 21. Exponential ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and exponential response (Y)
 set.seed(123)
 aa = round(rexp(15, rate=1/6.00), digits=2)
@@ -1118,6 +1241,7 @@ emmeans(m, pairwise ~ X1*X2, adjust="holm")
 ##
 #### 22. Gamma ####
 ##
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and skewed continuous response (Y)
 set.seed(123)
 aa = round(rgamma(15, shape=6.5, scale=3.5), digits=2)

@@ -1,11 +1,13 @@
 ###
+### #Rstats
+###
 ### Statistical Inference in R
 ### Jacob O. Wobbrock, Ph.D.
 ### wobbrock@uw.edu
 ### The Information School
 ### University of Washington
 ### October 23, 2021
-### Updated: 8/18/2025
+### Updated: 2/21/2026
 ###
 
 ###
@@ -16,7 +18,7 @@
 library(plyr)       # for ddply
 library(nlme)       # for lme
 library(lme4)       # for lmer
-library(lmerTest)
+library(lmerTest)   # for lmer
 library(MuMIn)      # for AICc
 library(car)        # for Anova
 library(effectsize) # for eta_squared
@@ -53,7 +55,8 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-plot(Y ~ X, data=df, main="Y by X")
+
+plot(Y ~ X, main="Y by X", data=df)
 
 # NOTES ON lme4::lmer()
 #   The lme4::lmer function does not allow specifying common variance-covariance (VCV) structures 
@@ -67,7 +70,7 @@ m.lmer = lmer(Y ~ X + (1|PId), data=df)
 #  called up with ?corClasses and ?varClasses explain these parameters. If nlme::lme fails to converge, 
 #  try adding the "control" parameter to the lme call: 
 #
-#    control=list(maxIter=100, msMaxIter=100, niterEM=100, msMaxEval=100, opt="optim"). # Usually works!
+#    control=list(maxIter=100, msMaxIter=100, niterEM=100, msMaxEval=100, opt="optim")  # Usually works!
 #
 #  For more information, see ?nlme::lmeControl.
 #  
@@ -121,39 +124,31 @@ m.UN = lme(Y ~ X, random=~1|PId, data=df, na.action=na.omit, correlation=corSymm
 # make a list of the 11 models we've built
 models <- list(m.lmer, m.ID, m.DIAG, m.CS, m.CSH, m.AR1, m.ARH1, m.ARMA11, m.TP, m.TPH, m.UN)
 
-#### Inspect the models ####
-for (i in 1:length(models)) {
-  print(paste0("-------------------- #", i, " --------------------"))
-  print(summary(models[[i]]))
-}
 
-for (i in 1:length(models)) {
-  print(paste0("-------------------- #", i, " --------------------"))
-  print(VarCorr(models[[i]]))
+#### Model summaries ####
+summary(models[[1]]) # lmer model
+print.summary.lme <- getFromNamespace("print.summary.lme", "nlme")
+for (i in 2:length(models)) {
+  cat("\n-------------------- #", i, " --------------------\n", sep="")
+  s = summary(models[[i]])
+  print.summary.lme(s)
 }
 
 #### Variance-covariance matrices ####
 for (i in 2:length(models)) {
-  print(paste0("-------------------- #", i, " --------------------"))
-  print(getVarCov(models[[i]], type="random.effects"))
-}
-for (i in 2:length(models)) {
-  print(paste0("-------------------- #", i, " --------------------"))
-  print(getVarCov(models[[i]], type="conditional"))
-}
-for (i in 2:length(models)) {
-  print(paste0("-------------------- #", i, " --------------------"))
-  print(getVarCov(models[[i]], type="marginal"))
+  cat("\n-------------------- #", i, " --------------------\n", sep="")
+  vc <- getVarCov(models[[i]], type="marginal")
+  print(vc[[1]])
 }
 
 #### Information criteria ####
 # lower is better
 for (i in 1:length(models)) {
-  print(paste0("-------------------- #", i, " --------------------"))
-  print(-2*logLik(models[[i]]))
-  print(paste0("AIC:  ", AIC(models[[i]]  )))
-  print(paste0("AICc: ", AICc(models[[i]] )))
-  print(paste0("BIC:  ", BIC(models[[i]]  )))
+  cat("\n-------------------- #", i, " --------------------\n", sep="")
+  print(paste0("-2LL: ", -2*logLik(models[[i]])[1]))
+  print(paste0("AIC:  ", AIC(models[[i]])[1]))
+  print(paste0("AICc: ", AICc(models[[i]])[1]))
+  print(paste0("BIC:  ", BIC(models[[i]])[1]))
 }
 
 #### Significance tests ####
@@ -166,13 +161,13 @@ Anova(m.lmer, type=3, test.statistic="Chisq")
 eta_squared(m.lmer, partial=TRUE)
 
 for (i in 2:length(models)) {
-  print(paste0("-------------------- #", i, " --------------------"))
+  cat("\n-------------------- #", i, " --------------------\n", sep="")
   print(anova(models[[i]], type="sequential")) # Type I ANOVA
   print(eta_squared(models[[i]], partial=TRUE))
   cat("\n")
 }
 for (i in 2:length(models)) {
-  print(paste0("-------------------- #", i, " --------------------"))
+  cat("\n-------------------- #", i, " --------------------\n", sep="")
   print(anova(models[[i]], type="marginal"))   # Type III ANOVA
   print(eta_squared(models[[i]], partial=TRUE))
   cat("\n")
@@ -190,17 +185,21 @@ for (i in 2:length(models)) {
 # 
 # Valid lme4::lmer() df 'mode' parameters: 
 #   “kenward-roger”, “satterthwaite”, “asymptotic”
-emm = emmeans(m.lmer, pairwise ~ X, adjust="holm", mode="kenward-roger"); print(emm)  # lme4::lmer model
-eff_size(emm, sigma=sigma(m.lmer), edf=df.residual(m.lmer))
+emm = emmeans(m.lmer, pairwise ~ X, adjust="holm", mode="kenward-roger") # lme4::lmer model
+emm$contrasts
+eff_size(emm$emmeans, sigma=sigma(m.lmer), edf=df.residual(m.lmer))
 
 
 # Valid nlme::lme() df 'mode' parameters: 
 #   “auto” (default), “containment”, “satterthwaite”, “appx-satterthwaite”, 
 #   “boot-satterthwaite”, “asymptotic”
 for (i in 2:length(models)) {
-  print(paste0("-------------------- #", i, " --------------------"))
-  emm = emmeans(models[[i]], pairwise ~ X, adjust="holm", mode="containment"); print(emm)  # nlme::lme models
-  eff = eff_size(emm, sigma=sigma(models[[i]]), edf=models[[i]]$fixDF$terms[["X"]]); print(eff)
+  cat("\n-------------------- #", i, " --------------------\n", sep="")
+  emm = emmeans(models[[i]], pairwise ~ X, adjust="holm", mode="containment") # nlme::lme models
+  print(emm$contrasts)
+  cat("\n")
+  eff = eff_size(emm$emmeans, sigma=sigma(models[[i]]), edf=models[[i]]$fixDF$terms[["X"]])
+  print(eff)
 }
 
 

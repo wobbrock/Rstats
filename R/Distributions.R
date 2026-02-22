@@ -1,11 +1,13 @@
 ###
+### #Rstats
+###
 ### Statistical Inference in R
 ### Jacob O. Wobbrock, Ph.D.
 ### wobbrock@uw.edu
 ### The Information School
 ### University of Washington
 ### August 2, 2023
-### Updated: 8/06/2025
+### Updated: 2/21/2026
 ###
 
 ###
@@ -13,15 +15,16 @@
 ### (Normal, lognormal, Poisson, negative binomial, exponential, gamma)
 ###
 
-library(plyr) # for ddply
-library(EnvStats) # for gofTest, print.gof
+library(plyr)         # for ddply
+library(EnvStats)     # for gofTest, print.gof
 library(fitdistrplus) # for fitdist, gofstat
-library(performance) # for check_overdispersion
+library(performance)  # for check_overdispersion
 
 
 ##
 #### 1. Normal distribution ####
 ##
+
 # df has one factor (X) w/two levels (a,b) and continuous response Y
 set.seed(123)
 a = round(rnorm(30, mean=30.0, sd=10.0), digits=2)
@@ -85,6 +88,7 @@ print.gof(fb)
 ##
 #### 2. Lognormal distribution ####
 ##
+
 # df has one factor (X) w/two levels (a,b) and positivey skewed response Y
 set.seed(123)
 a = round(rlnorm(30, meanlog=2.50, sdlog=0.90), digits=2)
@@ -148,6 +152,7 @@ print.gof(fb)
 ##
 #### 3. Poisson distribution ####
 ##
+
 # df has one factor (X) w/two levels (a,b) and integer count response Y
 set.seed(123)
 a = round(rpois(30, lambda=4.00), digits=2)
@@ -223,6 +228,7 @@ check_overdispersion(m)
 ##
 #### 4. Negative binomial distribution ####
 ##
+
 # df has one factor (X) w/two levels (a,b) and integer count response Y
 set.seed(123)
 a = round(rnbinom(30, size=4.0, mu=6.0), digits=2)
@@ -298,6 +304,7 @@ check_overdispersion(m)
 ##
 #### 5. Exponential distribution ####
 ##
+
 # df has one factor (X) w/two levels (a,b) and exponential response Y
 set.seed(123)
 a = round(rexp(30, rate=1/10), digits=2)

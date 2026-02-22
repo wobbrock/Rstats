@@ -1,11 +1,13 @@
 ###
+### #Rstats
+###
 ### Statistical Inference in R
 ### Jacob O. Wobbrock, Ph.D.
 ### wobbrock@uw.edu
 ### The Information School
 ### University of Washington
 ### November 26, 2018
-### Updated: 8/18/2025
+### Updated: 2/21/2026
 ###
 
 ###
@@ -13,20 +15,20 @@
 ### (Nonparametric analyses of differences)
 ###
 
-library(plyr)   # for ddply, mutate
-library(dplyr)  # for %>%
+library(plyr)        # for ddply, mutate
+library(dplyr)       # for %>%
 library(performance) # for check_*
-library(lme4)   # for lmer
-library(lmerTest) 
-library(rcompanion) # for wilcoxonZ
-library(reshape2)   # for dcast
-library(ARTool) # for art, art.con
-library(coin)   # for median_test, 
-                #     sign_test, 
-                #     wilcox_test, 
-                #     wilcoxsign_test, 
-                #     kruskal_test, 
-                #     friedman_test
+library(lme4)        # for lmer
+library(lmerTest)    # for lmer
+library(rcompanion)  # for wilcoxonZ
+library(reshape2)    # for dcast
+library(ARTool)      # for art, art.con
+library(coin)        # for median_test, 
+                     #     sign_test, 
+                     #     wilcox_test, 
+                     #     wilcoxsign_test, 
+                     #     kruskal_test, 
+                     #     friedman_test
 
 
 ##
@@ -36,6 +38,7 @@ library(coin)   # for median_test,
 ##
 #### 1. Median test ####
 #
+
 # df has one between-Ss. factor (X) w/levels (a,b) and a (1,0) response
 set.seed(123)
 a = sample(c(1,0), 30, replace=TRUE, prob=c(0.7, 0.3))
@@ -53,6 +56,7 @@ ddply(df, ~ X, function(data) c(
   "1"=sum(data$Y == 1),
   "0"=sum(data$Y == 0)
 ))
+
 barplot(c(
   sum(df[df$X == "a",]$Y), 
   sum(df[df$X == "b",]$Y)),
@@ -74,6 +78,7 @@ median_test(Y ~ X, data=df)
 ##
 #### 2. Sign test ####
 #
+
 # df has one within-Ss. factor (X) w/levels (a,b) and a (1,0) response
 set.seed(123)
 a = sample(c(1,0), 30, replace=TRUE, prob=c(0.7, 0.3))
@@ -93,6 +98,7 @@ ddply(df, ~ X, function(data) c(
   "1"=sum(data$Y == 1),
   "0"=sum(data$Y == 0)
 ))
+
 barplot(c(
   sum(df[df$X == "a",]$Y), 
   sum(df[df$X == "b",]$Y)),
@@ -105,7 +111,6 @@ barplot(c(
 
 m0 = lmer(Y ~ X + (1|PId), data=df)
 check_normality(m0)
-check_homogeneity(m0)
 
 sign_test(Y ~ X | PId, data=df)
 
@@ -114,6 +119,7 @@ sign_test(Y ~ X | PId, data=df)
 ##
 #### 3. Mann-Whitney U test ####
 #
+
 # df has one between-Ss. factor (X) w/levels (a,b) and continuous response (Y)
 set.seed(123)
 a = round(rnorm(30, 30.0, 12.0), digits=2)
@@ -135,7 +141,13 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-plot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue"),
+  data=df
+)
 
 m0 = lm(Y ~ X, data=df)
 check_normality(m0)
@@ -148,6 +160,7 @@ wilcox_test(Y ~ X, data=df) # Mann-Whitney U test
 ##
 #### 4. Wilcoxon signed-rank test ####
 #
+
 # df one within-Ss. factor (X) w/levels (a,b) and continuous response (Y)
 set.seed(123)
 a = round(rnorm(30, 30.0, 12.0), digits=2)
@@ -171,11 +184,16 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-plot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue"),
+  data=df
+)
 
 m0 = lmer(Y ~ X + (1|PId), data=df)
 check_normality(m0)
-check_homogeneity(m0)
 
 wilcoxsign_test(Y ~ X | PId, data=df, distribution="exact") # Wilcoxon signed-rank test
 
@@ -188,6 +206,7 @@ wilcoxsign_test(Y ~ X | PId, data=df, distribution="exact") # Wilcoxon signed-ra
 ##
 #### 5. Kruskal-Wallis test ####
 #
+
 # df has one between-Ss. factor (X) w/levels (a,b,c) and continuous response (Y)
 set.seed(123)
 a = round(rnorm(20, 30.0, 12.0), digits=2)
@@ -210,7 +229,13 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-plot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 m0 = lm(Y ~ X, data=df)
 check_normality(m0)
@@ -233,6 +258,7 @@ wilcoxonZ(df[df$X == "b",]$Y, df[df$X == "c",]$Y) # Z-score
 ##
 #### 6. Friedman test ####
 #
+
 # df has one within-Ss. factor (X) w/levels (a,b,c) and continuous response (Y)
 set.seed(123)
 a = round(rnorm(20, 30.0, 12.0), digits=2)
@@ -257,11 +283,16 @@ ddply(df, ~ X, function(data) c(
   "IQR"=IQR(data$Y),
   "Max"=max(data$Y)
 ))
-plot(Y ~ X, data=df, main="Y by X", col=c("pink","lightblue","lightgreen"))
+
+boxplot(
+  Y ~ X, 
+  main="Y by X", 
+  col=c("pink","lightblue","lightgreen"),
+  data=df
+)
 
 m0 = lmer(Y ~ X + (1|PId), data=df)
 check_normality(m0)
-check_homogeneity(m0)
 
 friedman_test(Y ~ X | PId, data=df, distribution="asymptotic")
 
@@ -285,6 +316,7 @@ wilcoxonZ(df2$b, df2$c, paired=TRUE) # Z-score
 ##
 #### 7. Aligned Rank Transform (between-Ss.) ####
 #
+
 # df has two between-Ss. factors (X1,X2) each w/levels (a,b) and continuous response (Y)
 set.seed(123)
 aa = round(runif(15, 20.0, 40.0), digits=2)
@@ -354,6 +386,7 @@ art.con(m, ~ X1*X2, adjust="holm", interaction=TRUE)
 ##
 #### 8. Aligned Rank Transform (within-Ss.) ####
 #
+
 # df has two within-Ss. factors (X1,X2) each w/levels (a,b) and continuous response (Y)
 set.seed(123)
 aa = round(runif(15, 20.0, 40.0), digits=2)
@@ -401,7 +434,6 @@ arrows(x0=2+dx, y0=msd[4,]$Mean - msd[4,]$SD, x1=2+dx, y1=msd[4,]$Mean + msd[4,]
 
 m0 = lmer(Y ~ X1*X2 + (1|PId), data=df)
 check_normality(m0)
-# no need with an LMM to check for sphericity!
 
 m = art(Y ~ X1*X2 + (1|PId), data=df) # PId is a random factor
 anova(m)
