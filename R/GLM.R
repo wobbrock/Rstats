@@ -7,7 +7,7 @@
 ### The Information School
 ### University of Washington
 ### March 12, 2019
-### Updated: 2/21/2026
+### Updated: 4/07/2026
 ###
 
 ###
@@ -276,7 +276,9 @@ par(mfrow=c(3,1))
 par(mfrow=c(1,1))
 
 df$Y = ordered(df$Y, levels=seq(1,7,1))
-m = polr(Y ~ X, data=df, Hess=TRUE)
+
+# "logistic", "probit", "loglog", "cloglog", and "cauchit" methods are valid:
+m = polr(Y ~ X, data=df, Hess=TRUE, method="logistic")
 Anova(m, type=3)
 emmeans(m, pairwise ~ X, adjust="holm")
 
@@ -894,7 +896,9 @@ par(mfrow=c(4,1))
 par(mfrow=c(1,1))
 
 df$Y = ordered(df$Y, levels=seq(1,7,1))
-m = polr(Y ~ X1*X2, data=df, Hess=TRUE)
+
+# "logistic", "probit", "loglog", "cloglog", and "cauchit" methods are valid:
+m = polr(Y ~ X1*X2, data=df, Hess=TRUE, method="logistic")
 Anova(m, type=3)
 emmeans(m, pairwise ~ X1*X2, adjust="holm")
 
